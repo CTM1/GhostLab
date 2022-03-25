@@ -1,8 +1,11 @@
+import java.net.InetAddress;
+import java.net.DatagramSocket;
+
 public class Player {
     int x;
     int y;
     int id;
     String name;
-    InetAdress addr;
+    InetAddress addr;
     DatagramSocket socket;
 }
