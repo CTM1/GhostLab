@@ -2,12 +2,12 @@ public class Ghost {
     int x;
     int y;
 
-    public Ghost(x, y) {
+    public Ghost(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
-    public moveGhost(Character[][] labyr) {
+    public void moveGhost(Character[][] labyr) {
         System.out.println("prout");
     }
 }
