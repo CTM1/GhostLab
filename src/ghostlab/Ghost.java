@@ -1,7 +1,9 @@
+package ghostlab;
+
 public class Ghost {
     int x;
     int y;
-
+ 
     public Ghost(int x, int y) {
         this.x = x;
         this.y = y;

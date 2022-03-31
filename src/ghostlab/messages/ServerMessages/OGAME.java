@@ -1,4 +1,8 @@
+package ghostlab.messages.ServerMessages;
+
 import java.io.PrintWriter;
+
+import ghostlab.GameServer;
 
 public class OGAME {
     private byte id;

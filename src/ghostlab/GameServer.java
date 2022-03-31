@@ -1,3 +1,5 @@
+package ghostlab;
+
 public class GameServer {
     byte id;
     Player[] players;
