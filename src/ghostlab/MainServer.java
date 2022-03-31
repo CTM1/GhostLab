@@ -1,3 +1,5 @@
+package ghostlab;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,7 +9,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.ServerSocket;
-import java.lang.Class;
+
+import ghostlab.messages.ServerMessages.*;
 
 public class MainServer {
     // Be careful when using this, bytes in Java are signed.
@@ -88,15 +91,17 @@ public class MainServer {
         // "MESSAGE" classes constructors, every clientMessage will take a BF 
         // (buffered reader boyfriend!1!!!1!!)
 
-        String request = "";
         while(true) {
+            String request = "";
             try {
                 for (int i = 0; i < 5; i++) {
-                    request += br.read();
+                    request += (char)(br.read());
+                    System.out.println(request);
                 }
 
                 switch (request) {
                     case "NEWPL":
+                        System.out.println("TEST BRUH");
                         //use GameServer length instead of this...
                         //idk how we'll handle when games are over but hey yahoo.
                         if (Byte.toUnsignedInt(nbOfGames) == 255)
@@ -107,11 +112,14 @@ public class MainServer {
                             //newGame(?);
                             nbOfGames++;
                         }
+                        break;
                     case "REGIS":
                         // REGOK msg = new REGOK(m);
                         // msg.send(pw);
                         //joinGame(?);
+                        break;
                     default:
+                        System.out.println("AAAAAA "+request);
                         throw new InvalidRequestException();
                 }
 
@@ -122,6 +130,7 @@ public class MainServer {
             } 
             catch (Exception e)
             {
+                e.printStackTrace();
                 REGNO failed = new REGNO();
                 pw.write(failed.toString());
 

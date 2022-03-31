@@ -1,3 +1,5 @@
+package ghostlab.messages.ClientMessages;
+
 import java.io.BufferedReader;
 
 public class REGIS {

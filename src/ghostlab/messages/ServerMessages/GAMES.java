@@ -1,3 +1,5 @@
+package ghostlab.messages.ServerMessages;
+
 import java.io.PrintWriter;
 
 public class GAMES {

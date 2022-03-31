@@ -1,8 +1,10 @@
+FILES = $(shell find ./src/* | grep .java)
+
 server:
-	javac -d classes *.java messages/clientMessages/*.java messages/serverMessages/*.java 
+	@javac -d classes $(FILES)
 
 clean:
-	rm classes/*
+	rm -rf classes/*
 
 run:
-	java -cp classes MainServer 1337
+	java -cp classes ghostlab.MainServer 1337
