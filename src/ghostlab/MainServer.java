@@ -8,18 +8,23 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.net.ServerSocket;
 
-import ghostlab.messages.ServerMessages.*;
+import ghostlab.messages.clientmessages.*;
+import ghostlab.messages.servermessages.*;
 
 public class MainServer {
     // Be careful when using this, bytes in Java are signed.
     // Use Byte.toUnsignedInt(nbOfGames).
     // Great, fucking A. toodledoo.
     static byte nbOfGames = 0x00;
-    static GameServer[] gameServers;
+    static ArrayList<GameServer> gameServers = new ArrayList<GameServer>();
     static class MaximumGameCapacityException extends Exception {}
-    static class InvalidRequestException extends Exception {}
+    static class InvalidRequestException extends Exception {
+        public InvalidRequestException(String string) {
+        }
+    }
     
     public static void main(String[] args) {
         int port = Integer.parseInt(args[0]);
@@ -69,14 +74,14 @@ public class MainServer {
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
         
         GAMES welcome = new GAMES(nbOfGames);
-        CITIZEN citizen = new CITIZEN();
+        // CITIZEN citizen = new CITIZEN();
 
-        citizen.send(pw);
-        welcome.send(pw);
+        // citizen.send(pw);
+        welcome.send(outStream);
 
-        for (int i = 0; i < Byte.toUnsignedInt(nbOfGames); i++) {
-            OGAME game = new OGAME(gameServers[i]);
-            game.send(pw);
+        for (GameServer gs : gameServers) {
+            OGAME game = new OGAME(gs);
+            game.send(outStream);
         }
 
         parseRequests(br, pw);
@@ -96,20 +101,17 @@ public class MainServer {
             try {
                 for (int i = 0; i < 5; i++) {
                     request += (char)(br.read());
-                    System.out.println(request);
                 }
 
                 switch (request) {
                     case "NEWPL":
-                        System.out.println("TEST BRUH");
-                        //use GameServer length instead of this...
+                        //TODO use GameServer length instead of this...
                         //idk how we'll handle when games are over but hey yahoo.
-                        if (Byte.toUnsignedInt(nbOfGames) == 255)
+                        if (Byte.toUnsignedInt(nbOfGames) >= 255)
                             throw new MaximumGameCapacityException();
                         else {
-                            //REGOK msg = new REGOK(m);
-                            //msg.send(pw);
-                            //newGame(?);
+                            NEWPL npl = new NEWPL(br);
+                            System.out.println("got npl, id="+npl.getPlayerID()+", port="+npl.getPort());
                             nbOfGames++;
                         }
                         break;
@@ -119,8 +121,7 @@ public class MainServer {
                         //joinGame(?);
                         break;
                     default:
-                        System.out.println("AAAAAA "+request);
-                        throw new InvalidRequestException();
+                        throw new InvalidRequestException("REQUEST "+request+ " IS FUCKY");
                 }
 
                 /* Reflection here might be interesting, or not, idk.

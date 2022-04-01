@@ -8,3 +8,5 @@ clean:
 
 run:
 	java -cp classes ghostlab.MainServer 1337
+
+crun: server run
