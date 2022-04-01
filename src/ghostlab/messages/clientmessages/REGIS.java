@@ -1,6 +1,7 @@
-package ghostlab.messages.ClientMessages;
+package ghostlab.messages.clientmessages;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 
 public class REGIS {
     private String playerID; // 8 chars or fuck off!
@@ -9,9 +10,10 @@ public class REGIS {
 
     public REGIS() {}
 
-    public REGIS(BufferedReader br) {
+    public REGIS(InputStream in) {
         //this.playerID = id;
         //this.port = port;
         //this.gameID = m;
+
     }
 }

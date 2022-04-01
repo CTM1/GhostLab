@@ -1,4 +1,4 @@
-package ghostlab.messages.ServerMessages;
+package ghostlab.messages.servermessages;
 
 import java.io.PrintWriter;
 
