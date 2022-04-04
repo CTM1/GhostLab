@@ -10,13 +10,15 @@ package ghostlab;
 
 public interface LabyrInterface {
 	/**
-	 * The constructor, returns a well built Labyrinth
+	 * Basically a factory, returns a well built Labyrinth
 	 *
 	 * @return A well built Labyrinth of specified width and height.
 	 * @param width The width of the Labyrinth to build.
 	 * @param height The height of the Labyrinth to build.
 	 */
-	public LabyrInterface LabyrinthConstructor(int width, int height);
+	public static LabyrInterface CTOR(int width, int height) {
+		return null;
+	}
 
 	/**
 	 * This method takes the coordinates of a player, a direction, a
