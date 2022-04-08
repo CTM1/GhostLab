@@ -2,12 +2,16 @@ package ghostlab;
 
 public class GameServer {
     byte id;
+    int port;
     Player[] players;
     LabyrInterface labyrinth;
     Ghost[] ghosts;
 
-    public GameServer(String id, int port) {
+    public GameServer(int id, int port) {
         // Make ghosts players and shit
+        this.id = (byte)id;
+        this.players = new Player[0];
+        this.port = port;
     }
 
     public void joinGame(String id) {

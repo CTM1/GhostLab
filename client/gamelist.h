@@ -1,0 +1,1 @@
+void gamelist(int sock, char *ip, char *port);

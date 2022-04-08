@@ -1,7 +1,9 @@
 package ghostlab.messages.servermessages;
 
+import java.io.IOException;
+import java.io.OutputStream;
 
-public class REGOK {
+public class REGOK implements ServerMessage {
     private byte matchID;
     
     public REGOK(byte m) {
@@ -10,5 +12,13 @@ public class REGOK {
 
     public String toString() {
         return ("REGOK " + this.matchID + "***");
+    }
+
+    @Override
+    public void send(OutputStream os) throws IOException {
+        os.write("REGOK ".getBytes());
+        os.write(matchID);
+        os.write("***".getBytes());
+        os.flush();
     }
 }

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <ncurses.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 #include <errno.h>
 
 #include "logo.h"
+#include "gamelist.h"
 
 int connect_server(char *ip, char *portstr) {
     struct sockaddr_in saddrin;
@@ -38,34 +40,60 @@ int connect_server(char *ip, char *portstr) {
     return sock;    
 }
 
-int main(int argc, char **argv) {
-    initscr();
-    keypad(stdscr, true);
-    
-    int row, col;
-
-    getmaxyx(stdscr, row, col);
-
-    // printw("%d, %d", col, row);
+void display_main_screen(int row, int col) {
     for(int i=0; i<6; i++) {
         mvprintw((row/4)+i, (col-60)/2, "%s", logolines[i]);
     }
-    refresh();
 
     char iptxt[] =   "Server's IP address : ";
     char porttxt[] = "Server port         : ";
     mvprintw(2*(row/3), ((col-strlen(iptxt)-15)/2), "%s", iptxt);
     mvprintw(2*(row/3)+1, ((col-strlen(porttxt)-15)/2), "%s", porttxt);
+    refresh();
+}
+
+void get_main_screen_input(int row, int col, char *ip, char *port) {
+    echo();
     move(2*(row/3), (col/2)+4);
     refresh();
-    char ip[16];
     getstr(ip);
     move(2*(row/3)+1, (col/2)+4);
-    char port[6];
     getstr(port);
     noecho();
+}
+
+void clear_main_screen_input(int row, int col) {
+    move(2*(row/3), (col/2)+4);
+    clrtoeol();
+    move(2*(row/3)+1, (col/2)+4);
+    clrtoeol();
+}
+
+int main(int argc, char **argv) {
+    initscr();
+    keypad(stdscr, true);
     
-    getch();
+    int row, col;
+    getmaxyx(stdscr, row, col);
+
+    int sock = -1;
+    char ip[16];
+    char port[6];
+    display_main_screen(row, col);
+    while(sock < 0) {
+        get_main_screen_input(row, col, ip, port);
+        sock = connect_server(ip, port);
+        if (sock < 0) {
+            char errormsg[] = "An error occured during server connection";
+            mvprintw(row-2, (col-strlen(errormsg))/2, "%s", errormsg);
+            clear_main_screen_input(row, col);
+            refresh();
+        }
+    }
+    move(row-2, 0);
+    erase();
+    refresh();
+    gamelist(sock, ip, port);
     endwin();
     
 }

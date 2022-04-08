@@ -1,7 +1,7 @@
 JAVAFILES = $(shell find ./server/src/* | grep .java)
 
 .PHONY: all
-all: serv cli
+all: server client
 
 .PHONY: server
 server:
@@ -21,5 +21,3 @@ runserver: server
 
 runclient: client
 	@bin/client
-
-crun: server run

@@ -19,11 +19,37 @@ public class MainServer {
     // Use Byte.toUnsignedInt(nbOfGames).
     // Great, fucking A. toodledoo.
     static byte nbOfGames = 0x00;
-    static ArrayList<GameServer> gameServers = new ArrayList<GameServer>();
+    static GameServer[] gameServers = new GameServer[256];
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
         public InvalidRequestException(String string) {
         }
+    }
+
+    private static ArrayList<GameServer> getCurrentGames() {
+        ArrayList<GameServer> ret = new ArrayList<GameServer>();
+        for(int i=0; i<256; i++) {
+            if (gameServers[i] != null) {
+                ret.add(gameServers[i]);
+            }
+        }
+        return ret;
+    }
+
+    private static int getAvailableGameID() {
+        for(int i=0; i<256; i++) {
+            if (gameServers[i] == null) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int createNewGame(NEWPL npl) {
+        int id = getAvailableGameID();
+        gameServers[id] = new GameServer(id, npl.getPort());
+        nbOfGames++;
+        return id;
     }
     
     public static void main(String[] args) {
@@ -74,22 +100,19 @@ public class MainServer {
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
         
         GAMES welcome = new GAMES(nbOfGames);
-        // CITIZEN citizen = new CITIZEN();
-
-        // citizen.send(pw);
         welcome.send(outStream);
 
-        for (GameServer gs : gameServers) {
+        for (GameServer gs : getCurrentGames()) {
             OGAME game = new OGAME(gs);
             game.send(outStream);
         }
 
-        parseRequests(br, pw);
+        parseRequests(br, pw, inStream, outStream);
         
         client.close();
     }
 
-    private static void parseRequests(BufferedReader br, PrintWriter pw) {
+    private static void parseRequests(BufferedReader br, PrintWriter pw, InputStream is, OutputStream os) {
         int failedTries = 0;
 
         // We'll read the first five characters into this, then handle the rest in
@@ -105,13 +128,14 @@ public class MainServer {
 
                 switch (request) {
                     case "NEWPL":
-                        //TODO use GameServer length instead of this...
                         //idk how we'll handle when games are over but hey yahoo.
                         if (Byte.toUnsignedInt(nbOfGames) >= 255)
                             throw new MaximumGameCapacityException();
                         else {
                             NEWPL npl = NEWPL.parse(br);
-                            nbOfGames++;
+                            int id = createNewGame(npl);
+                            REGOK reply = new REGOK((byte)id);
+                            reply.send(os);
                         }
                         break;
                     case "REGIS":
