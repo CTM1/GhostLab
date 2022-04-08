@@ -110,8 +110,7 @@ public class MainServer {
                         if (Byte.toUnsignedInt(nbOfGames) >= 255)
                             throw new MaximumGameCapacityException();
                         else {
-                            NEWPL npl = new NEWPL(br);
-                            System.out.println("got npl, id="+npl.getPlayerID()+", port="+npl.getPort());
+                            NEWPL npl = NEWPL.parse(br);
                             nbOfGames++;
                         }
                         break;
