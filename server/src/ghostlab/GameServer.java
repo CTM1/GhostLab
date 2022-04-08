@@ -3,7 +3,7 @@ package ghostlab;
 public class GameServer {
     byte id;
     Player[] players;
-    Character[][] labyrinth;
+    LabyrInterface labyrinth;
     Ghost[] ghosts;
 
     public GameServer(String id, int port) {
