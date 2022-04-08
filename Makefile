@@ -9,16 +9,17 @@ server:
 
 .PHONY: client
 client:
+	mkdir -p bin
 	@gcc -lncurses -lform -Werror client/*.c -o bin/client
 
 clean:
 	@rm -rf classes/*
 	@rm bin/client
 
-runserver:
+runserver: server
 	@java -cp classes ghostlab.MainServer 1337
 
-runclient:
+runclient: client
 	@bin/client
 
 crun: server run
