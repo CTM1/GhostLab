@@ -51,9 +51,22 @@ public class MainServer {
         nbOfGames++;
         return id;
     }
+
+    // FOR TESTING PURPOSES
+    private static int createNewGame(int port) {
+        int id = getAvailableGameID();
+        gameServers[id] = new GameServer(id, port);
+        nbOfGames++;
+        return id;
+    }
     
     public static void main(String[] args) {
         int port = Integer.parseInt(args[0]);
+
+        createNewGame(1001);
+        createNewGame(1002);
+        createNewGame(1003);
+        createNewGame(1004);
 
         try {
             ServerSocket socket = new ServerSocket(port);
