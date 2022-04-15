@@ -5,12 +5,11 @@ import java.io.IOException;
 
 public class NEWPL {
     private String playerID; // 8 chars or fuck off!
-    private int port; // 4 chars or fuck off!
+    private String port; // 4 chars or fuck off!
 
     public NEWPL(String playerID, String port) throws IOException {
         this.playerID = playerID;
-        this.port = Integer.parseInt(port);
-        
+        this.port = port;
     }
 
     public static NEWPL parse(BufferedReader br) throws IOException {
@@ -41,7 +40,7 @@ public class NEWPL {
         return playerID;
     }
 
-    public int getPort() {
+    public String getPort() {
         return port;
     }
 }

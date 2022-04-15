@@ -9,7 +9,7 @@ public class Ghost {
         this.y = y;
     }
 
-    public void moveGhost(Character[][] labyr) {
+    public void moveGhost(Labyrinth labyr) {
         System.out.println("prout");
     }
 }
