@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.net.ServerSocket;
 
@@ -17,13 +18,11 @@ import ghostlab.messages.servermessages.*;
 public class MainServer {
     // Be careful when using this, bytes in Java are signed.
     // Use Byte.toUnsignedInt(nbOfGames).
-    // Great, fucking A. toodledoo.
     static byte nbOfGames = 0x00;
     static GameServer[] gameServers = new GameServer[256];
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
-        public InvalidRequestException(String string) {
-        }
+        public InvalidRequestException(String string) {}
     }
 
     private static ArrayList<GameServer> getCurrentGames() {
@@ -35,38 +34,9 @@ public class MainServer {
         }
         return ret;
     }
-
-    private static int getAvailableGameID() {
-        for(int i=0; i<256; i++) {
-            if (gameServers[i] == null) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static int createNewGame(NEWPL npl) {
-        int id = getAvailableGameID();
-        gameServers[id] = new GameServer(id, npl.getPort());
-        nbOfGames++;
-        return id;
-    }
-
-    // FOR TESTING PURPOSES
-    private static int createNewGame(int port) {
-        int id = getAvailableGameID();
-        gameServers[id] = new GameServer(id, port);
-        nbOfGames++;
-        return id;
-    }
     
     public static void main(String[] args) {
         int port = Integer.parseInt(args[0]);
-
-        createNewGame(1001);
-        createNewGame(1002);
-        createNewGame(1003);
-        createNewGame(1004);
 
         try {
             ServerSocket socket = new ServerSocket(port);
@@ -120,12 +90,12 @@ public class MainServer {
             game.send(outStream);
         }
 
-        parseRequests(br, pw, inStream, outStream);
+        parseRequests(br, pw, inStream, outStream, (InetSocketAddress) client.getRemoteSocketAddress());
         
         client.close();
     }
 
-    private static void parseRequests(BufferedReader br, PrintWriter pw, InputStream is, OutputStream os) {
+    private static void parseRequests(BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, InetSocketAddress playerAddr) {
         int failedTries = 0;
 
         // We'll read the first five characters into this, then handle the rest in
@@ -146,24 +116,31 @@ public class MainServer {
                             throw new MaximumGameCapacityException();
                         else {
                             NEWPL npl = NEWPL.parse(br);
-                            int id = createNewGame(npl);
+                            int id = createNewGame(npl, playerAddr);
                             REGOK reply = new REGOK((byte)id);
                             reply.send(os);
                         }
                         break;
                     case "REGIS":
-                        // REGOK msg = new REGOK(m);
-                        // msg.send(pw);
-                        //joinGame(?);
+                        REGIS regis = REGIS.parse(br);
+                        byte gID = regis.getGameID();
+                        String port = regis.getPort();
+
+                        if (gameServers[gID] == null) {
+                            throw new InvalidRequestException("Game " + gID + " does not exist.");
+                        }
+                        if (gameServers[gID].started) {
+                            throw new InvalidRequestException("Game " + gID + " is ongoing.");
+                        }
+                        else {
+                            gameServers[gID].joinGame(regis.getPlayerID());
+                            REGOK reply = new REGOK((byte) (regis.getGameID()));
+                            reply.send(os);
+                        }
                         break;
                     default:
                         throw new InvalidRequestException("REQUEST "+request+ " IS FUCKY");
                 }
-
-                /* Reflection here might be interesting, or not, idk.
-                (getting Constructor by name instead of a Class by name can work?)
-                I tried it and a switch seemed simpler
-                */
             } 
             catch (Exception e)
             {
@@ -171,10 +148,26 @@ public class MainServer {
                 REGNO failed = new REGNO();
                 pw.write(failed.toString());
 
-                if (failedTries++ == 3);
+                if (++failedTries == 3);
                     break;
             }
         }
         
+    }
+
+    private static int getAvailableGameID() {
+        for(int i=0; i<256; i++) {
+            if (gameServers[i] == null) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int createNewGame(NEWPL npl, InetSocketAddress hostAddr) {
+        int id = getAvailableGameID();
+        gameServers[id] = new GameServer(id, npl.getPort(), npl.getPlayerID(), hostAddr);
+        nbOfGames++;
+        return id;
     }
 }

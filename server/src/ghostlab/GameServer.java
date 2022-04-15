@@ -1,23 +1,25 @@
 package ghostlab;
 
+import java.net.InetSocketAddress;
+
 public class GameServer {
     byte id;
-    int port;
+    String UDPport;
     Player[] players;
     LabyrInterface labyrinth;
     Ghost[] ghosts;
+    boolean started = false;
 
-    public GameServer(int id, int port) {
-        // Make ghosts players and shit
+    public GameServer(int id, String UDPport, String hostID, InetSocketAddress hostAddr) {
         this.id = (byte)id;
-        this.players = new Player[0];
-        this.port = port;
+        this.players = new Player[0xFF];
+        this.UDPport = UDPport;
+        this.players[0] = new Player(hostID, UDPport, hostAddr);
+        this.labyrinth = new Labyrinth(120, 120);
+
     }
 
     public void joinGame(String id) {
-        // Make new player, drop into labyrinth
-        // MAKE SURE THERE IS LESS THAN 254 PLAYERS OR DENY THE SHITS
-        // (doing it in MainServer is better).
     }
 
     public byte getId() {
