@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.net.ServerSocket;
+import java.lang.Integer;
 
 import ghostlab.messages.clientmessages.*;
 import ghostlab.messages.servermessages.*;
@@ -23,16 +24,6 @@ public class MainServer {
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
         public InvalidRequestException(String string) {}
-    }
-
-    private static ArrayList<GameServer> getCurrentGames() {
-        ArrayList<GameServer> ret = new ArrayList<GameServer>();
-        for(int i=0; i<256; i++) {
-            if (gameServers[i] != null) {
-                ret.add(gameServers[i]);
-            }
-        }
-        return ret;
     }
     
     public static void main(String[] args) {
@@ -90,17 +81,21 @@ public class MainServer {
             game.send(outStream);
         }
 
-        parseRequests(br, pw, inStream, outStream, (InetSocketAddress) client.getRemoteSocketAddress());
+        parseMainMenuRequests(br, pw, inStream, outStream, (InetSocketAddress) client.getRemoteSocketAddress(), client);
         
         client.close();
     }
 
-    private static void parseRequests(BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, InetSocketAddress playerAddr) {
+    private static void parseMainMenuRequests(BufferedReader br, PrintWriter pw, 
+                                                InputStream is, OutputStream os,
+                                                InetSocketAddress playerAddr, Socket client) throws IOException {
         int failedTries = 0;
+        byte currentLobby = 0;
+        REGNO failed = new REGNO();
+        DUNNO dunno = new DUNNO();
 
         // We'll read the first five characters into this, then handle the rest in
         // "MESSAGE" classes constructors, every clientMessage will take a BF 
-        // (buffered reader boyfriend!1!!!1!!)
 
         while(true) {
             String request = "";
@@ -110,49 +105,75 @@ public class MainServer {
                 }
 
                 switch (request) {
+                    case "UNREG":
+                        if (currentLobby == 0)
+                            dunno.send(os);
+                        else {
+                            UNROK unrok = new UNROK((byte) currentLobby);
+                            unrok.send(os);
+                            currentLobby = 0;
+                        }
+                    break;
+                    case "SIZE?":
+                    /* Will be able to create a SIZE! request when Labyrinth matches the protocol*/
+                        SIZEQ sizeReq = SIZEQ.parse(br);
+                        byte gIDreq = sizeReq.getGameID();
+                        if (gameServers[gIDreq].getId() != 0) {
+                            dunno.send(os);
+                        }
+                        else 
+                            dunno.send(os);
+                    break;
+                    case "LIST?":
+                        /*Will also be done later*/
+                        dunno.send(os);
+                    break;
                     case "NEWPL":
-                        //idk how we'll handle when games are over but hey yahoo.
-                        if (Byte.toUnsignedInt(nbOfGames) >= 255)
+                        if (Byte.toUnsignedInt(nbOfGames) >= 255) {
                             throw new MaximumGameCapacityException();
+                        }
                         else {
                             NEWPL npl = NEWPL.parse(br);
                             int id = createNewGame(npl, playerAddr);
-                            REGOK reply = new REGOK((byte)id);
-                            reply.send(os);
+                            REGOK replyNewPl = new REGOK((byte)id);
+                            replyNewPl.send(os);
                         }
-                        break;
+                    break;
                     case "REGIS":
                         REGIS regis = REGIS.parse(br);
-                        byte gID = regis.getGameID();
+                        int gID = regis.getGameID();
                         String port = regis.getPort();
 
                         if (gameServers[gID] == null) {
                             throw new InvalidRequestException("Game " + gID + " does not exist.");
                         }
                         if (gameServers[gID].started) {
-                            throw new InvalidRequestException("Game " + gID + " is ongoing.");
+                            throw new InvalidRequestException("Game " + gID + " is ongoing. Can't join right now.");
                         }
                         else {
-                            gameServers[gID].joinGame(regis.getPlayerID());
-                            REGOK reply = new REGOK((byte) (regis.getGameID()));
-                            reply.send(os);
+                            gameServers[gID].joinGame(regis, playerAddr);
+                            REGOK replyRegis = new REGOK((byte) (regis.getGameID()));
+                            replyRegis.send(os);
                         }
-                        break;
+                    break;
+                    case "GAME?":
+                        dunno.send(os);
+                    break;
                     default:
-                        throw new InvalidRequestException("REQUEST "+request+ " IS FUCKY");
+                        throw new InvalidRequestException("Bad request: " + request);
                 }
             } 
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 e.printStackTrace();
-                REGNO failed = new REGNO();
-                pw.write(failed.toString());
+                failed.send(os);
 
-                if (++failedTries == 3);
-                    break;
+                if (++failedTries == 5) {
+                    System.out.println("Too many bad requests from " + client.toString() + ", closing their connection.");                   
+                    client.close();
+                    return;
+                }
             }
         }
-        
     }
 
     private static int getAvailableGameID() {
@@ -169,5 +190,15 @@ public class MainServer {
         gameServers[id] = new GameServer(id, npl.getPort(), npl.getPlayerID(), hostAddr);
         nbOfGames++;
         return id;
+    }
+
+    private static ArrayList<GameServer> getCurrentGames() {
+        ArrayList<GameServer> games = new ArrayList<GameServer>();
+        for(int i=0; i<256; i++) {
+            if (gameServers[i] != null) {
+                games.add(gameServers[i]);
+            }
+        }
+        return games;
     }
 }
