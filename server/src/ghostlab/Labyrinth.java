@@ -13,6 +13,8 @@ import java.util.Random;
 public class Labyrinth implements LabyrInterface {
 	// The labyrinth properly said, true means cell, false means wall
 	private boolean[][] surface;
+	private int w;
+	private int h;
 
 	public Labyrinth(int width, int height) {
 		surface = new boolean[width][height];

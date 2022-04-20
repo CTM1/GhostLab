@@ -1,25 +1,27 @@
 package ghostlab;
 
 import java.net.InetSocketAddress;
+import ghostlab.messages.clientmessages.*;
+import ghostlab.messages.servermessages.*;
 
 public class GameServer {
     byte id;
-    String UDPport;
-    Player[] players;
+    String hostUDPport;
+    Player[] lobby;
     LabyrInterface labyrinth;
     Ghost[] ghosts;
     boolean started = false;
+    boolean over = false;
 
-    public GameServer(int id, String UDPport, String hostID, InetSocketAddress hostAddr) {
+    public GameServer(int id, String hostUDPport, String hostID, InetSocketAddress hostAddr) {
         this.id = (byte)id;
-        this.players = new Player[0xFF];
-        this.UDPport = UDPport;
-        this.players[0] = new Player(hostID, UDPport, hostAddr);
+        this.lobby = new Player[0xFF];
+        this.hostUDPport = hostUDPport;
+        this.lobby[0] = new Player(hostID, hostUDPport, hostAddr);
         this.labyrinth = new Labyrinth(120, 120);
-
     }
 
-    public void joinGame(String id) {
+    public void joinGame(REGIS regis, InetSocketAddress playerAddr) {
     }
 
     public byte getId() {
@@ -28,6 +30,6 @@ public class GameServer {
 
     public byte getNbOfPlayers() {
         // if players > 254 this breaks the protocol.
-        return ((byte) players.length);
+        return ((byte) lobby.length);
     }
 }
