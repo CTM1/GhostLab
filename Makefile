@@ -9,8 +9,8 @@ server:
 
 .PHONY: client
 client:
-	mkdir -p bin
-	@gcc -lncurses -lform -Werror client/*.c -o bin/client
+	@mkdir -p bin
+	@gcc -Werror client/*.c -o bin/client -lncurses -lform
 
 clean:
 	@rm -rf classes/*
