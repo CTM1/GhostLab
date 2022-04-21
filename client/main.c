@@ -11,8 +11,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "utils.h"
-#include "gamelist.h"
+#include "includes/utils.h"
+#include "includes/gamelist.h"
 
 int connect_server(char *ip, char *portstr) {
     struct sockaddr_in saddrin;

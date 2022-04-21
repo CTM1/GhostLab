@@ -10,7 +10,7 @@ server:
 .PHONY: client
 client:
 	@mkdir -p bin
-	@gcc -Werror client/*.c -o bin/client -lncurses -lform
+	@gcc -ggdb3 -Werror client/*.c -o bin/client -lncurses -lform
 
 clean:
 	@rm -rf classes/*
