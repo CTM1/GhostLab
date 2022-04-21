@@ -1,5 +1,26 @@
+#include <sys/socket.h>
+
 int posmod(int i, int n) {
     return (i % n + n) % n;
+}
+
+int recv_n_bytes(int sock, void *buffer, int n) {
+    int totalreceived = 0;
+    while(totalreceived < n) {
+        int nreceived = recv(sock, buffer+totalreceived, n-totalreceived, 0);
+        if (nreceived < 0)
+            return nreceived;
+        totalreceived += nreceived;
+    }
+    return totalreceived;
+}
+
+void format_username(char *username) {
+    for (int i=0; i<8; i++) {
+        if (username[i] == 0)
+            username[i] = '_';
+    }
+    username[8] = 0;
 }
 
 char logoline1[] = "  ________.__                    __  .____          ___.    ";
