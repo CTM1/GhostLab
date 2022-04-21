@@ -27,4 +27,8 @@ public class Player {
         
         String playerIP = playerAddr.getAddress().getHostAddress();
     }
+
+    public String getPlayerID() {
+        return (this.name);
+    }
 }

@@ -16,11 +16,13 @@ import java.lang.Integer;
 import ghostlab.messages.clientmessages.*;
 import ghostlab.messages.servermessages.*;
 
+
 public class MainServer {
+    static final int MAXGAMES = 256;
     // Be careful when using this, bytes in Java are signed.
     // Use Byte.toUnsignedInt(nbOfGames).
     static byte nbOfGames = 0x00;
-    static GameServer[] gameServers = new GameServer[256];
+    static GameServer[] gameServers = new GameServer[MAXGAMES];
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
         public InvalidRequestException(String string) {}
@@ -125,39 +127,64 @@ public class MainServer {
                             dunno.send(os);
                     break;
                     case "LIST?":
-                        /*Will also be done later*/
-                        dunno.send(os);
+                        LISTQ listQ = LISTQ.parse(br);
+                        int gID = Byte.toUnsignedInt(listQ.getGameID());
+                        
+                        if (gameServers[gID] == null)
+                            dunno.send(os);
+                        else {
+                            LISTA listA = new LISTA(gameServers[gID]);
+                            listA.send(os);
+                            Player[] lobby = gameServers[gID].getLobby();
+
+                            for (Player p : lobby) {
+                                PLAYR pmsg = new PLAYR(p);
+                                pmsg.send(os);
+                            }
+                        }
                     break;
                     case "NEWPL":
-                        if (Byte.toUnsignedInt(nbOfGames) >= 255) {
+                        if (Byte.toUnsignedInt(nbOfGames) >= MAXGAMES - 1) {
                             throw new MaximumGameCapacityException();
                         }
                         else {
                             NEWPL npl = NEWPL.parse(br);
                             int id = createNewGame(npl, playerAddr);
-                            REGOK replyNewPl = new REGOK((byte)id);
-                            replyNewPl.send(os);
+                            
+                            if (id == -1)
+                                failed.send(os);
+                            else { 
+                                REGOK replyNewPl = new REGOK((byte)id);
+                                replyNewPl.send(os);
+                            }
                         }
                     break;
                     case "REGIS":
                         REGIS regis = REGIS.parse(br);
-                        int gID = regis.getGameID();
+                        int regGameID = regis.getGameID();
                         String port = regis.getPort();
 
-                        if (gameServers[gID] == null) {
-                            throw new InvalidRequestException("Game " + gID + " does not exist.");
+                        if (gameServers[regGameID] == null) {
+                            throw new InvalidRequestException("Game " + regGameID + " does not exist.");
                         }
-                        if (gameServers[gID].started) {
-                            throw new InvalidRequestException("Game " + gID + " is ongoing. Can't join right now.");
+                        if (gameServers[regGameID].hasStarted()) {
+                            throw new InvalidRequestException("Game " + regGameID + " is ongoing. Can't join right now.");
                         }
                         else {
-                            gameServers[gID].joinGame(regis, playerAddr);
+                            gameServers[regGameID].joinGame(regis, playerAddr);
                             REGOK replyRegis = new REGOK((byte) (regis.getGameID()));
                             replyRegis.send(os);
                         }
                     break;
                     case "GAME?":
-                        dunno.send(os);
+                        GAMEQ gameQ = GAMEQ.parse(br);
+                        GAMEA gameA = new GAMEA(gameServers);
+                        gameA.send(os);
+
+                        for (GameServer gs : getCurrentAvailableGames()) {
+                            OGAME game = new OGAME(gs);
+                            game.send(os);
+                        }
                     break;
                     default:
                         throw new InvalidRequestException("Bad request: " + request);
@@ -176,29 +203,53 @@ public class MainServer {
         }
     }
 
-    private static int getAvailableGameID() {
-        for(int i=0; i<256; i++) {
-            if (gameServers[i] == null) {
-                return i;
-            }
+    private static byte getAvailableGameID() {
+        byte id = 0;
+        
+        for (int i = 0; i < MAXGAMES; i++) {
+            if (gameServers[i] == null)
+                return (id);
+            id++;
         }
-        return -1;
+
+        return ((byte) -1);
     }
 
     private static int createNewGame(NEWPL npl, InetSocketAddress hostAddr) {
-        int id = getAvailableGameID();
-        gameServers[id] = new GameServer(id, npl.getPort(), npl.getPlayerID(), hostAddr);
-        nbOfGames++;
-        return id;
+        byte id = getAvailableGameID();
+        int index = Byte.toUnsignedInt(id);
+
+        if (id != -1) {
+            gameServers[index] = new GameServer(id, npl.getPort(), npl.getPlayerID(), hostAddr);
+            nbOfGames++;
+            return (id);
+        }
+
+        return (-1);
     }
 
     private static ArrayList<GameServer> getCurrentGames() {
         ArrayList<GameServer> games = new ArrayList<GameServer>();
-        for(int i=0; i<256; i++) {
-            if (gameServers[i] != null) {
-                games.add(gameServers[i]);
+        
+        for (GameServer g : gameServers) {
+            if (g != null) {
+                games.add(g);
             }
         }
+
+        return games;
+    }
+
+    private static ArrayList<GameServer> getCurrentAvailableGames() {
+        ArrayList<GameServer> games = new ArrayList<GameServer>();
+        
+        for (GameServer g : gameServers) {
+            if (g != null) {
+                if (!g.hasStarted())
+                    games.add(g);
+            }
+        }
+
         return games;
     }
 }
