@@ -82,6 +82,10 @@ public class GameServer {
         return (this.lobby);
     }
 
+    public LabyrInterface getLabyrinth() {
+        return (this.labyrinth);
+    }
+
     public boolean hasStarted() {
         return (this.started);
     }
