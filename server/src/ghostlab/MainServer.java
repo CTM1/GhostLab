@@ -29,7 +29,13 @@ public class MainServer {
     }
     
     public static void main(String[] args) {
-        int port = Integer.parseInt(args[0]);
+        Logger.log("Starting up server...\n");
+	int port = Integer.parseInt(args[0]);
+
+	if (System.getenv("VERBOSE") != null) {
+		Logger.setVerbose(true);
+	}
+	Logger.verbose("Verbose activated\n");
 
         try {
             ServerSocket socket = new ServerSocket(port);
