@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "logo.h"
+#include "utils.h"
 #include "gamelist.h"
 
 int connect_server(char *ip, char *portstr) {

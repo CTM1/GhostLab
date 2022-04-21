@@ -1,3 +1,7 @@
+int posmod(int i, int n) {
+    return (i % n + n) % n;
+}
+
 char logoline1[] = "  ________.__                    __  .____          ___.    ";
 char logoline2[] = " /  _____/|  |__   ____  _______/  |_|    |   _____ \\_ |__  ";
 char logoline3[] = "/   \\  ___|  |  \\ /  _ \\/  ___/\\   __\\    |   \\__  \\ | __ \\ ";

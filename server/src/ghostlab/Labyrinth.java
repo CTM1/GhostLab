@@ -13,8 +13,19 @@ import java.util.Random;
 public class Labyrinth implements LabyrInterface {
 	// The labyrinth properly said, true means cell, false means wall
 	private boolean[][] surface;
+	private char w;
+	private char h;
+
+	public char getWidth() { return w; }
+	public char getHeight() { return h; }
 
 	public Labyrinth(int width, int height) {
+		width = Math.min(1000, width);
+		height = Math.min(1000, height);
+
+		w = (char)Integer.toUnsignedLong(width);
+		h = (char)Integer.toUnsignedLong(height);
+
 		surface = new boolean[width][height];
 
 		// all of surface is inaccessible at first
@@ -78,5 +89,4 @@ public class Labyrinth implements LabyrInterface {
 		}
 		return moved;
 	}
-
 }
