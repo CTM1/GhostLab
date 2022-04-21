@@ -78,7 +78,7 @@ public class MainServer {
         GAMES welcome = new GAMES(nbOfGames);
         welcome.send(outStream);
 
-        for (GameServer gs : getCurrentGames()) {
+        for (GameServer gs : getCurrentAvailableGames()) {
             OGAME game = new OGAME(gs);
             game.send(outStream);
         }
