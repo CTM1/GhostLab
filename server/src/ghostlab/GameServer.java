@@ -5,13 +5,13 @@ import ghostlab.messages.clientmessages.*;
 import ghostlab.messages.servermessages.*;
 
 public class GameServer {
-    byte id;
-    String hostUDPport;
-    Player[] lobby;
-    LabyrInterface labyrinth;
-    Ghost[] ghosts;
-    boolean started = false;
-    boolean over = false;
+    private byte id;
+    private String hostUDPport;
+    private Player[] lobby;
+    private LabyrInterface labyrinth;
+    private Ghost[] ghosts;
+    private boolean started = false;
+    private boolean over = false;
 
     public GameServer(int id, String hostUDPport, String hostID, InetSocketAddress hostAddr) {
         this.id = (byte)id;
@@ -31,5 +31,13 @@ public class GameServer {
     public byte getNbOfPlayers() {
         // if players > 254 this breaks the protocol.
         return ((byte) lobby.length);
+    }
+
+    public Player[] getLobby() {
+        return (this.lobby);
+    }
+
+    public boolean hasStarted() {
+        return (this.started);
     }
 }

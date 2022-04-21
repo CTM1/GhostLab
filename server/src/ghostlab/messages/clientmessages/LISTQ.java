@@ -4,14 +4,14 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.IOException;
 
-public class SIZEQ {
+public class LISTQ {
     private byte gameID;
 
-    public SIZEQ(byte gId) {
+    public LISTQ(byte gId) {
         this.gameID = gId;
     }
 
-    public static SIZEQ parse(BufferedReader br) throws IOException {
+    public static LISTQ parse(BufferedReader br) throws IOException {
         br.read(); // the space
         byte gID;
 
@@ -19,12 +19,12 @@ public class SIZEQ {
 
         for (int i = 0; i < 3; i++)
             br.read();
-
-        return new SIZEQ(gID);
+            
+        return new LISTQ(gID);
     }
 
     public String toString() {
-        return("SIZEQ " + this.gameID + "***");
+        return("LIST? " + this.gameID + "***");
     }
 
     public byte getGameID() {
