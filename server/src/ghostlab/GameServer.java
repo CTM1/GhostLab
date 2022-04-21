@@ -75,7 +75,7 @@ public class GameServer {
     }
 
     public byte getNbOfPlayers() {
-        return ((byte) lobby.length);
+        return ((byte) Integer.toUnsignedLong(lobby.length));
     }
 
     public Player[] getLobby() {
