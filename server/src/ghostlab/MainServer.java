@@ -83,23 +83,24 @@ public class MainServer {
             game.send(outStream);
         }
 
-        parseMainMenuRequests(br, pw, inStream, outStream, (InetSocketAddress) client.getRemoteSocketAddress(), client);
+        parseMainMenuRequests(br, pw, inStream, outStream, client);
         
         client.close();
     }
 
     private static void parseMainMenuRequests(BufferedReader br, PrintWriter pw, 
                                                 InputStream is, OutputStream os,
-                                                InetSocketAddress playerAddr, Socket client) throws IOException {
+                                                Socket client) throws IOException {
         int failedTries = 0;
         byte currentLobby = 0;
+        String currPlayerID = "";
         REGNO failed = new REGNO();
         DUNNO dunno = new DUNNO();
 
         // We'll read the first five characters into this, then handle the rest in
         // "MESSAGE" classes constructors, every clientMessage will take a BF 
 
-        while(true) {
+        mainMenuLoop: while(true) {
             String request = "";
             try {
                 for (int i = 0; i < 5; i++) {
@@ -108,16 +109,23 @@ public class MainServer {
 
                 switch (request) {
                     case "UNREG":
-                        if (currentLobby == 0)
+                        if (currentLobby == 0 && currPlayerID == "")
                             dunno.send(os);
                         else {
-                            UNROK unrok = new UNROK((byte) currentLobby);
-                            unrok.send(os);
-                            currentLobby = 0;
+                            if (gameServers[currentLobby].unregister(currPlayerID)) {
+                                UNROK unrok = new UNROK((byte) currentLobby);
+                                unrok.send(os);
+                                currentLobby = 0;
+                                currPlayerID = "";
+                            }
+                            else {
+                                dunno.send(os);
+                            }
                         }
                     break;
                     case "SIZE?":
-                    /* Will be able to create a SIZE! request when Labyrinth matches the protocol*/
+                    /* Will be able to create a SIZE! request when 
+                    Labyrinth matches the protocol*/
                         SIZEQ sizeReq = SIZEQ.parse(br);
                         byte gIDreq = sizeReq.getGameID();
                         if (gameServers[gIDreq].getId() != 0) {
@@ -149,7 +157,7 @@ public class MainServer {
                         }
                         else {
                             NEWPL npl = NEWPL.parse(br);
-                            int id = createNewGame(npl, playerAddr);
+                            int id = createNewGame(npl, client);
                             
                             if (id == -1)
                                 failed.send(os);
@@ -161,19 +169,28 @@ public class MainServer {
                     break;
                     case "REGIS":
                         REGIS regis = REGIS.parse(br);
-                        int regGameID = regis.getGameID();
+                        byte regGameID = regis.getGameID();
+                        int regID = Byte.toUnsignedInt(regGameID);
                         String port = regis.getPort();
 
-                        if (gameServers[regGameID] == null) {
-                            throw new InvalidRequestException("Game " + regGameID + " does not exist.");
+                        if (gameServers[regID] == null) {
+                            throw new InvalidRequestException("Game " + regID 
+                                                        + " does not exist.");
                         }
-                        if (gameServers[regGameID].hasStarted()) {
-                            throw new InvalidRequestException("Game " + regGameID + " is ongoing. Can't join right now.");
+                        if (gameServers[regID].hasStarted()) {
+                            throw new InvalidRequestException("Game " + regID 
+                                        + " is ongoing. Can't join right now.");      
                         }
                         else {
-                            gameServers[regGameID].joinGame(regis, playerAddr);
-                            REGOK replyRegis = new REGOK((byte) (regis.getGameID()));
-                            replyRegis.send(os);
+                            if (gameServers[regID].joinGame(regis, client)) {
+                                currPlayerID = regis.getPlayerID();
+                                REGOK replyRegis = 
+                                    new REGOK((byte) (regis.getGameID()));
+                                replyRegis.send(os);
+                            }
+                            else {
+                                failed.send(os);
+                            }
                         }
                     break;
                     case "GAME?":
@@ -186,6 +203,14 @@ public class MainServer {
                             game.send(os);
                         }
                     break;
+                    case "START":
+                        START start = START.parse(br);
+                        if (currentLobby == 0 && currPlayerID == "")
+                            throw new InvalidRequestException("Bad request: " + request + ", player not yet properly registered in a game");
+                        else {
+                            /* warn currentLobby of start message so it can start using the TCP Socket */
+                            //while (!gs.isOver()) {} 
+                        }
                     default:
                         throw new InvalidRequestException("Bad request: " + request);
                 }
@@ -194,8 +219,9 @@ public class MainServer {
                 e.printStackTrace();
                 failed.send(os);
 
-                if (++failedTries == 5) {
-                    System.out.println("Too many bad requests from " + client.toString() + ", closing their connection.");                   
+                if (++failedTries == 8) {
+                    System.out.println("Too many bad requests from " + 
+                            client.toString() + ", closing their connection.");                   
                     client.close();
                     return;
                 }
@@ -215,12 +241,13 @@ public class MainServer {
         return ((byte) -1);
     }
 
-    private static int createNewGame(NEWPL npl, InetSocketAddress hostAddr) {
+    private static int createNewGame(NEWPL npl, Socket client) {
         byte id = getAvailableGameID();
         int index = Byte.toUnsignedInt(id);
 
         if (id != -1) {
-            gameServers[index] = new GameServer(id, npl.getPort(), npl.getPlayerID(), hostAddr);
+            gameServers[index] = new GameServer(id, npl.getPort(), 
+                                npl.getPlayerID(), client);
             nbOfGames++;
             return (id);
         }
