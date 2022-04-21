@@ -130,15 +130,15 @@ public class MainServer {
                         }
                     break;
                     case "SIZE?":
-                    /* Will be able to create a SIZE! request when 
-                    Labyrinth matches the protocol*/
                         SIZEQ sizeReq = SIZEQ.parse(br);
                         byte gIDreq = sizeReq.getGameID();
-                        if (gameServers[gIDreq].getId() != 0) {
+                        GameServer m = gameServers[Byte.toUnsignedInt(gIDreq)];
+                        if (m == null)
                             dunno.send(os);
+                        else {
+                            SIZEA sizeAns = new SIZEA(m);
+                            sizeAns.send(os);
                         }
-                        else 
-                            dunno.send(os);
                     break;
                     case "LIST?":
                         LISTQ listQ = LISTQ.parse(br);
