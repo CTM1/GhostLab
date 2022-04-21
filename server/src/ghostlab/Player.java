@@ -1,8 +1,10 @@
 package ghostlab;
 
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
+import java.net.Socket;
 
 public class Player {
     int x;
@@ -11,13 +13,14 @@ public class Player {
     int UDPport;
     String name;
     String playerIP;
-    InetSocketAddress addr;
+    Socket TCPSocket;
     DatagramSocket UDPsocket;
-
-    public Player(String name, String UDPport, InetSocketAddress playerAddr)
-    {
+    
+    public Player(int id, String name, String UDPport, Socket TCPSocket) throws SocketException {
         this.name = name;
+        this.id = id;
         this.UDPport = Integer.parseInt(UDPport);
+        this.TCPSocket = TCPSocket;
         
         try {
             this.UDPsocket = new DatagramSocket();
@@ -25,7 +28,9 @@ public class Player {
             e.printStackTrace();
         }
         
-        String playerIP = playerAddr.getAddress().getHostAddress();
+        InetSocketAddress addr = (InetSocketAddress) TCPSocket.getRemoteSocketAddress();
+        this.playerIP = addr.getAddress().toString();
+        this.UDPsocket = new DatagramSocket(Integer.parseInt(UDPport));
     }
 
     public String getPlayerID() {

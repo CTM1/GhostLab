@@ -16,7 +16,7 @@ public class REGIS {
     }
 
     public static REGIS parse(BufferedReader br) throws IOException {
-         br.read(); // the space
+        br.read(); // the space
         String playerID = "";
         String port = "";
         String suffix = "";
