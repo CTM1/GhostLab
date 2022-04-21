@@ -32,4 +32,7 @@ public interface LabyrInterface {
 	 * @param distance The max distance covered before stopping.
 	 */
 	public int tryMove(int x, int y, int direction, int distance);
+
+	public char getWidth();
+	public char getHeight();
 }
