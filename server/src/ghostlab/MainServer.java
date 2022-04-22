@@ -30,13 +30,13 @@ public class MainServer {
     
     public static void main(String[] args) {
         Logger.log("Starting up server...\n");
-	int port = Integer.parseInt(args[0]);
+	    int port = Integer.parseInt(args[0]);
 
-	if (System.getenv("VERBOSE") != null) {
-		Logger.setVerbose(true);
-	}
-	Logger.verbose("Verbose activated\n");
-
+	    if (System.getenv("VERBOSE") != null) {
+		    Logger.setVerbose(true);
+	    }
+	    Logger.verbose("Verbose activated\n");
+        
         try {
             ServerSocket socket = new ServerSocket(port);
 
@@ -53,13 +53,14 @@ public class MainServer {
         try {
             Socket socket = servsock.accept();
             ClientHandler ch = new ClientHandler(socket);
-            ch.start();
+            ch.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
-    private static class ClientHandler extends Thread {
+
+
+    private static class ClientHandler implements Runnable {
         Socket socket;
 
         public ClientHandler(Socket socket) {
@@ -68,12 +69,13 @@ public class MainServer {
 
         public void run() {
             try {
-                handleClient(socket);
-            } catch(IOException e) {
+               handleClient(socket);
+            }   catch(IOException e) {
                 e.printStackTrace();
             }
         }
     }
+
 
     private static void handleClient(Socket client) throws IOException {
         InputStream inStream = client.getInputStream();
@@ -112,7 +114,7 @@ public class MainServer {
                 for (int i = 0; i < 5; i++) {
                     request += (char)(br.read());
                 }
-
+                System.out.println(request);
                 switch (request) {
                     case "UNREG":
                         if (currentLobby == 0 && currPlayerID == "")
@@ -130,15 +132,15 @@ public class MainServer {
                         }
                     break;
                     case "SIZE?":
-                    /* Will be able to create a SIZE! request when 
-                    Labyrinth matches the protocol*/
                         SIZEQ sizeReq = SIZEQ.parse(br);
                         byte gIDreq = sizeReq.getGameID();
-                        if (gameServers[gIDreq].getId() != 0) {
+                        GameServer m = gameServers[Byte.toUnsignedInt(gIDreq)];
+                        if (m == null)
                             dunno.send(os);
+                        else {
+                            SIZEA sizeAns = new SIZEA(m);
+                            sizeAns.send(os);
                         }
-                        else 
-                            dunno.send(os);
                     break;
                     case "LIST?":
                         LISTQ listQ = LISTQ.parse(br);
@@ -152,8 +154,10 @@ public class MainServer {
                             Player[] lobby = gameServers[gID].getLobby();
 
                             for (Player p : lobby) {
-                                PLAYR pmsg = new PLAYR(p);
-                                pmsg.send(os);
+                                if (p != null) {
+                                    PLAYR pmsg = new PLAYR(p);
+                                    pmsg.send(os);
+                                }
                             }
                         }
                     break;
@@ -225,7 +229,7 @@ public class MainServer {
                 e.printStackTrace();
                 failed.send(os);
 
-                if (++failedTries == 8) {
+                if (++failedTries == 3) {
                     System.out.println("Too many bad requests from " + 
                             client.toString() + ", closing their connection.");                   
                     client.close();
@@ -252,8 +256,7 @@ public class MainServer {
         int index = Byte.toUnsignedInt(id);
 
         if (id != -1) {
-            gameServers[index] = new GameServer(id, npl.getPort(), 
-                                npl.getPlayerID(), client);
+            gameServers[index] = new GameServer(id, npl.getPort(), npl.getPlayerID(), client);
             nbOfGames++;
             return (id);
         }

@@ -11,19 +11,16 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "utils.h"
+#include "includes/utils.h"
+#include "includes/lobby.h"
+#include "includes/protocol.h"
 
-#define die(msg, code) { printw("%s", msg); return code; }
+
 
 struct gamelist_windows {
     WINDOW *topwindow;
     WINDOW *gameswindow;
     WINDOW *buttonswindow;
-};
-
-struct game {
-    int id;
-    int numplayers;
 };
 
 void freewindows(struct gamelist_windows *gmw) {
@@ -33,7 +30,7 @@ void freewindows(struct gamelist_windows *gmw) {
     free(gmw);
 }
 
-struct gamelist_windows * draw_windows(int row, int col, char *connip, char *connport) {
+struct gamelist_windows * draw_gamelist_windows(int row, int col, char *connip, char *connport) {
     struct gamelist_windows *gmw = malloc(sizeof(struct gamelist_windows));
     WINDOW *topwindow = newwin(5, col, 0, 0);
     box(topwindow, 0, 0);
@@ -65,67 +62,6 @@ struct gamelist_windows * draw_windows(int row, int col, char *connip, char *con
     return gmw;
 }
 
-int handle_games(int sock) {
-    char msg[6];
-    int r = recv(sock, msg, 6, 0);
-    if (r != 6)
-        die("ERR1", -1);
-    if(strncmp("GAMES ", msg, 6)) {
-        return -1;
-    }
-
-    uint8_t nbGames;
-    r = recv(sock, &nbGames, 1, 0);
-    if (r != 1)
-        return -1;
-    char suffix[4];
-    r = recv(sock, suffix, 3, 0);
-    if (r != 3)
-        return -1;
-    if (strncmp("***", suffix, 3))
-        return -1;
-
-    return nbGames;
-}
-
-int handle_ogame(int sock, int nbGames, WINDOW *gameswindow) {
-    //TODO finish this shit
-    for(int i=0; i<nbGames; i++) {
-        char msg[6];
-        int r = recv(sock, msg, 6, 0);
-        if (r != 6)
-            die("ERR1", -1);
-        if(strncmp("OGAME ", msg, 6))
-            die("ERR2", -1);
-
-        uint8_t id;
-        r = recv(sock, &id, 1, 0);
-        if (r != 1)
-            die("ERR3", -1);
-        
-        char space;
-        r = recv(sock, &space, 1, 0);
-        if (space != ' ')
-            die("ERR4", -1);
-
-        uint8_t nbPlayers;
-        r = recv(sock, &nbPlayers, 1, 0);
-        if (r != 1)
-            die("ERR5", -1);
-
-        char suffix[4];
-        r = recv(sock, suffix, 3, 0);
-        if (r != 3)
-            die("ERR6", -1);
-        if (strncmp("***", suffix, 3))
-            die("ERR7", -1);
-
-        mvwprintw(gameswindow, 2+i, 2, "GAME %d (%d/256 players)", id, nbPlayers);
-    }
-    wrefresh(gameswindow);
-    return 0;
-}
-
 void changeHighlight(struct gamelist_windows *gmw, int winselected, int gameselected, int optselected, int nbGames) {
     for (int i=0; i<nbGames; i++) {
         if (i==gameselected && winselected == 0)
@@ -141,6 +77,19 @@ void changeHighlight(struct gamelist_windows *gmw, int winselected, int gamesele
     }
 }
 
+void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port) {
+    echo();
+    curs_set(1);
+    mvwprintw(gmw->buttonswindow, 5, 2, "Pseudo : ");
+    mvwprintw(gmw->buttonswindow, 6, 2, "Port   : ");
+    wmove(gmw->buttonswindow, 5, 11);
+    wgetstr(gmw->buttonswindow, username);
+    wmove(gmw->buttonswindow, 6, 11);
+    wgetstr(gmw->buttonswindow, port);
+    noecho();
+    curs_set(0);
+}
+
 void gamelist(int sock, char *ip, char *port) {
     int row, col;
     getmaxyx(stdscr, row, col);
@@ -153,7 +102,7 @@ void gamelist(int sock, char *ip, char *port) {
     unsigned int selectedGame = 0;
     unsigned int selectedButton = 0;
 
-    struct gamelist_windows *gmw = draw_windows(row, col, ip, port);
+    struct gamelist_windows *gmw = draw_gamelist_windows(row, col, ip, port);
     // mvwprintw(gmw->topwindow, 0, 0, "Window %d, button %d", selectedWindow, selectedButton);
     if (nbGames<0)
         printw("ERROR");
@@ -202,21 +151,32 @@ void gamelist(int sock, char *ip, char *port) {
                         exit(0);
                     }
                     if (selectedButton == 0) {
-                        echo();
-                        mvwprintw(gmw->buttonswindow, 5, 2, "Pseudo : ");
-                        mvwprintw(gmw->buttonswindow, 6, 2, "Port   : ");
-                        wmove(gmw->buttonswindow, 5, 11);
-                        char pseudo[11];
-                        char port[5];
-                        wgetstr(gmw->buttonswindow, pseudo);
-                        wmove(gmw->buttonswindow, 6, 11);
-                        wgetstr(gmw->buttonswindow, port);
-                        noecho();
+                        char username[9];
+                        char udpport[5];
+                        memset(username, 0, 9);
+                        askUsernameAndPort(gmw, username, udpport);
+                        format_username(username);
+                        send_newpl(sock, username, udpport);
+                        char response[11];
+                        int r;
+                        if ((r = recv_n_bytes(sock, response, 10)) < 0)
+                            return; //TODO ERROR HANDLING
+                        if (!strncmp(response, "REGOK ", 6)) {
+                            uint8_t gameId;
+                            gameId = (uint8_t)response[6];
+                            erase();
+                            refresh();
+                            lobby(sock, ip, port, gameId);
+                            gmw = draw_gamelist_windows(row, col, ip, port);
+                        } else {
+                            printw("ERRORRRRWWWW");
+                        }
+                        
                     }
+
                 }
         }
         changeHighlight(gmw, selectedWindow, selectedGame, selectedButton, nbGames);
-        // freewindows(gmw);
     }
     
     
