@@ -75,11 +75,15 @@ public class GameServer {
     }
 
     public byte getNbOfPlayers() {
-        return ((byte) lobby.length);
+        return ((byte) Integer.toUnsignedLong(lobby.length));
     }
 
     public Player[] getLobby() {
         return (this.lobby);
+    }
+
+    public LabyrInterface getLabyrinth() {
+        return (this.labyrinth);
     }
 
     public boolean hasStarted() {
