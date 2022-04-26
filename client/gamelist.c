@@ -147,7 +147,6 @@ void gamelist(int sock, char *ip, char *port) {
                 break;
             case 10:
                 if (selectedWindow == 0 && !gamelistempty) {
-                    printf("%d %d\n", selectedGame, gamelist[selectedGame].gameId);
                     char username[9];
                     char udpport[5];
                     memset(username, 0, 9);

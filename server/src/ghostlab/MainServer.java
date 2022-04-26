@@ -53,14 +53,14 @@ public class MainServer {
         try {
             Socket socket = servsock.accept();
             ClientHandler ch = new ClientHandler(socket);
-            ch.run();
+            ch.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 
-    private static class ClientHandler implements Runnable {
+    private static class ClientHandler extends Thread {
         Socket socket;
 
         public ClientHandler(Socket socket) {
