@@ -30,6 +30,8 @@ public class REGIS {
         for(int i=0; i<4; i++) //the port
             port += (char) br.read();
 
+        br.read(); // the space
+
         gID = (byte) br.read();
 
         for(int i=0; i<3; i++) //***

@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "includes/utils.h"
 #include "includes/lobby.h"
 #include "includes/protocol.h"
 
@@ -104,17 +103,21 @@ void gamelist(int sock, char *ip, char *port) {
 
     struct gamelist_windows *gmw = draw_gamelist_windows(row, col, ip, port);
     // mvwprintw(gmw->topwindow, 0, 0, "Window %d, button %d", selectedWindow, selectedButton);
+    bool gamelistempty = false;
+    game gamelist[nbGames];
     if (nbGames<0)
         printw("ERROR");
     if (nbGames == 0) {
         mvwprintw(gmw->gameswindow, 2, 2, "There are no games available.");
+        gamelistempty = true;
+        nbGames = 1;
     } else {
-        if (handle_ogame(sock, nbGames, gmw->gameswindow) < 0)
+        if (handle_ogame(sock, nbGames, gamelist) < 0)
             printw("ERROR 2");
+        for(int i=0; i<nbGames; i++)
+            mvwprintw(gmw->gameswindow, 2+i, 2, "GAME %d (%d/256 players)", gamelist[i].gameId, gamelist[i].nbPlayers);
     }
 
-    if (nbGames == 0)
-        nbGames = 1;
     changeHighlight(gmw, selectedWindow, selectedGame, selectedButton, nbGames);
 
     while(true) {
@@ -143,6 +146,29 @@ void gamelist(int sock, char *ip, char *port) {
                 }
                 break;
             case 10:
+                if (selectedWindow == 0 && !gamelistempty) {
+                    printf("%d %d\n", selectedGame, gamelist[selectedGame].gameId);
+                    char username[9];
+                    char udpport[5];
+                    memset(username, 0, 9);
+                    askUsernameAndPort(gmw, username, udpport);
+                    format_username(username);
+                    send_regis(sock, username, udpport, gamelist[selectedGame].gameId);
+                    char response[11];
+                    int r;
+                    if ((r = recv_n_bytes(sock, response, 10)) < 0)
+                        return; //TODO ERROR HANDLING
+                    if (!strncmp(response, "REGOK ", 6)) {
+                        uint8_t gameId;
+                        gameId = (uint8_t)response[6];
+                        erase();
+                        refresh();
+                        lobby(sock, ip, port, gameId);
+                        gmw = draw_gamelist_windows(row, col, ip, port);
+                    } else {
+                        printw("ERRORRRRWWWW");
+                    }
+                }
                 if (selectedWindow == 1) {
                     if (selectedButton == 1) {
                         close(sock);
@@ -173,7 +199,6 @@ void gamelist(int sock, char *ip, char *port) {
                         }
                         
                     }
-
                 }
         }
         changeHighlight(gmw, selectedWindow, selectedGame, selectedButton, nbGames);
