@@ -8,7 +8,7 @@ int recv_n_bytes(int sock, void *buffer, int n) {
     int totalreceived = 0;
     while(totalreceived < n) {
         int nreceived = recv(sock, buffer+totalreceived, n-totalreceived, 0);
-        if (nreceived < 0)
+        if (nreceived <= 0)
             return nreceived;
         totalreceived += nreceived;
     }

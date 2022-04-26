@@ -25,7 +25,7 @@ public class MainServer {
     static GameServer[] gameServers = new GameServer[MAXGAMES];
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
-        public InvalidRequestException(String string) {}
+        public InvalidRequestException(String string) { super(string); }
     }
     
     public static void main(String[] args) {
@@ -106,7 +106,7 @@ public class MainServer {
         // We'll read the first five characters into this, then handle the rest in
         // "MESSAGE" classes constructors, every clientMessage will take a BF 
 
-        mainMenuLoop: while(true) {
+        while(true) {
             String request = "";
             try {
                 for (int i = 0; i < 5; i++) {
@@ -149,11 +149,12 @@ public class MainServer {
                         else {
                             LISTA listA = new LISTA(gameServers[gID]);
                             listA.send(os);
-                            Player[] lobby = gameServers[gID].getLobby();
+                            ArrayList<Player> lobby = gameServers[gID].getLobby();
 
                             for (Player p : lobby) {
                                 PLAYR pmsg = new PLAYR(p);
                                 pmsg.send(os);
+                                System.out.println(p.getPlayerID());
                             }
                         }
                     break;
@@ -176,7 +177,9 @@ public class MainServer {
                     case "REGIS":
                         REGIS regis = REGIS.parse(br);
                         byte regGameID = regis.getGameID();
+                        System.out.println(regGameID);
                         int regID = Byte.toUnsignedInt(regGameID);
+                        System.out.println(regID);
                         String port = regis.getPort();
 
                         if (gameServers[regID] == null) {

@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "includes/protocol.h"
+
 typedef struct {
     WINDOW *topwindow;
     WINDOW *lobbywindow;
@@ -42,6 +44,19 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId) {
     getmaxyx(stdscr, row, col);
     lobby_windows *lbw = draw_lobby_windows(row, col, connip, connport);
     mvwprintw(lbw->lobbywindow, 2, 2, "Game %d lobby", gameId);
+
+    labsize lbsize;
+    int r = getgamesize(socket, gameId, &lbsize);
+    
+    mvwprintw(lbw->lobbywindow, 4, 2, "Labyrinth size : %d*%d", lbsize.width, lbsize.height);
+    
+    playerlist pl;
+    r = getplayerlist(socket, gameId, &pl);
+    mvwprintw(lbw->lobbywindow, 5, 2, "%d/256 players in lobby", pl.nplayers);
+    for (int i=0; i<pl.nplayers; i++) {
+        mvwprintw(lbw->lobbywindow, 6+i, 2, "  - %s", pl.idList[i]);
+    }
+
     wrefresh(lbw->lobbywindow);
     getch();
     erase();

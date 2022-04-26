@@ -1,3 +1,4 @@
+#include <endian.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,8 +33,7 @@ int handle_games(int sock) {
     return nbGames;
 }
 
-int handle_ogame(int sock, int nbGames, WINDOW *gameswindow) {
-    //TODO finish this shit
+int handle_ogame(int sock, int nbGames, game garray[]) {
     for(int i=0; i<nbGames; i++) {
         char msg[6];
         int r = recv_n_bytes(sock, msg, 6);
@@ -64,9 +64,9 @@ int handle_ogame(int sock, int nbGames, WINDOW *gameswindow) {
         if (strncmp("***", suffix, 3))
             die("ERR7", -1);
 
-        mvwprintw(gameswindow, 2+i, 2, "GAME %d (%d/256 players)", id, nbPlayers);
+        garray[i].gameId = id;
+        garray[i].nbPlayers = nbPlayers;
     }
-    wrefresh(gameswindow);
     return 0;
 }
 
@@ -80,5 +80,87 @@ int send_newpl(int sock, char *username, char *udpport) {
         return -1; //TODO ERROR HANDLING
     if (send(sock, "***", 3, 0) < 0)
         return -1; //TODO ERROR HANDLING
+    return 0;
+}
+
+int send_regis(int sock, char *username, char *udpport, uint8_t gameid) {
+    if (send(sock, "REGIS ", 6, 0) < 0)
+        return -1; //TODO ERROR HANDLING
+    if (send(sock, username, 8, 0) < 0)
+        return -1; //TODO ERROR HANDLING
+    send(sock, " ", 1, 0);
+    if (send(sock, udpport, 4, 0) < 0)
+        return -1; //TODO ERROR HANDLING
+    send(sock, " ", 1, 0);
+    if (send(sock, &gameid, 1, 0) < 0)
+        return -1;
+    if (send(sock, "***", 3, 0) < 0)
+        return -1; //TODO ERROR HANDLING
+    return 0;
+}
+
+int getgamesize(int sock, uint8_t gamenumber, labsize *lbsize) {
+    if (send(sock, "SIZE? ", 6, 0) < 0)
+        return -1;
+    if (send(sock, &gamenumber, 1, 0) < 0)
+        return -1; 
+    if (send(sock, "***", 3, 0) < 0)
+        return -1;
+    
+    char response[16];
+    if (recv_n_bytes(sock, response, 5) <= 0)
+        return -1;
+    if (!strncmp(response, "DUNNO", 5))
+        return 1;
+    if (strncmp(response, "SIZE!", 5))
+        return -1;
+    if (recv_n_bytes(sock, response+5, 11) <= 0)
+        return -1;
+    uint8_t m = (uint8_t)response[6];
+    if (m != gamenumber)
+        return 2;
+    
+    memcpy(&lbsize->height, response+8, 2);
+    memcpy(&lbsize->width, response+11, 2);
+    // lbsize->height = be16toh(lbsize->height);
+    // lbsize->width = be16toh(lbsize->width);
+    // printw("SIZE! %d %x %x***", m, lbsize->height, lbsize->width);
+    return 0;
+}
+
+int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl) {
+    if (send(sock, "LIST? ", 6, 0) < 0)
+        return -1;
+    if (send(sock, &gamenumber, 1, 0) < 0)
+        return -1; 
+    if (send(sock, "***", 3, 0) < 0)
+        return -1;
+
+    char response[12];
+    if (recv_n_bytes(sock, response, 5) <= 0)
+        return -1;
+    if (!strncmp(response, "DUNNO", 5))
+        return 1;
+    if (strncmp(response, "LIST!", 5))
+        return -1;
+    if (recv_n_bytes(sock, response+5, 7) <= 0)
+        return -1;
+    uint8_t m = (uint8_t)response[6];
+    if (m != gamenumber)
+        return 2;
+    pl->nplayers = (uint8_t)response[8];
+    pl->idList = malloc(sizeof(char*) * pl->nplayers);
+    for (int i=0; i<pl->nplayers; i++) {
+        char playr[18];
+        if (recv_n_bytes(sock, playr, 17) <= 0)
+            return -1;
+        playr[17] = 0;
+        if (strncmp(playr, "PLAYR", 5))
+            return -1;
+        // printw("%s", playr);
+        pl->idList[i] = malloc(9);
+        memcpy(pl->idList[i], playr+6, 8);
+        pl->idList[i][8] = 0;
+    }
     return 0;
 }
