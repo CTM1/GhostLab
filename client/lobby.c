@@ -18,7 +18,7 @@ typedef struct {
     WINDOW *lobbywindow;
 } lobby_windows;
 
-lobby_windows * draw_lobby_windows(int row, int col, char *connip, char *connport) {
+lobby_windows * draw_lobby_windows(int row, int col, char *connip, char *connport, uint8_t gameId, labsize lbsize) {
     lobby_windows *lbw = malloc(sizeof(lobby_windows));
     WINDOW *topwindow = newwin(5, col, 0, 0);
     box(topwindow, 0, 0);
@@ -30,8 +30,15 @@ lobby_windows * draw_lobby_windows(int row, int col, char *connip, char *connpor
 
     WINDOW *lobbywindow = newwin(row-4, col, 4, 0);
     box(lobbywindow, 0, 0);
+    char *options[] = {"* Refresh player list", "* Ready to start" , "* Quit lobby"};
+    for(int i=0; i<3; i++) {
+        mvwprintw(lobbywindow, (row/2-2)+i, col-28, "%s", options[i]);
+    }
     mvwaddch(lobbywindow, 0, 0, ACS_LTEE);
     mvwaddch(lobbywindow, 0, col-1, ACS_RTEE);
+
+    mvwprintw(lobbywindow, 2, 2, "Game %d lobby", gameId);
+    mvwprintw(lobbywindow, 4, 2, "Labyrinth size : %d*%d", lbsize.width, lbsize.height);
     wrefresh(lobbywindow);
 
     lbw->topwindow = topwindow;
@@ -39,26 +46,69 @@ lobby_windows * draw_lobby_windows(int row, int col, char *connip, char *connpor
     return lbw;
 }
 
-void lobby(int socket, char *connip, char *connport, uint8_t gameId) {
-    int row, col;
-    getmaxyx(stdscr, row, col);
-    lobby_windows *lbw = draw_lobby_windows(row, col, connip, connport);
-    mvwprintw(lbw->lobbywindow, 2, 2, "Game %d lobby", gameId);
+void changeLobbyHighlight(lobby_windows *lbw, int optselected, int row, int col) {
+    for (int i=0; i<3; i++) {
+        if (i==optselected)
+            mvwchgat(lbw->lobbywindow, (row/2-2)+i, col-28, 25, A_REVERSE, 0, NULL);
+        else
+            mvwchgat(lbw->lobbywindow, (row/2-2)+i, col-28, 25, A_NORMAL, 0, NULL);
+    }
+}
 
-    labsize lbsize;
-    int r = getgamesize(socket, gameId, &lbsize);
-    
-    mvwprintw(lbw->lobbywindow, 4, 2, "Labyrinth size : %d*%d", lbsize.width, lbsize.height);
-    
+void refreshPlayerList(lobby_windows *lbw, int socket, uint8_t gameId) {
     playerlist pl;
-    r = getplayerlist(socket, gameId, &pl);
+    int r = getplayerlist(socket, gameId, &pl);
     mvwprintw(lbw->lobbywindow, 5, 2, "%d/256 players in lobby", pl.nplayers);
     for (int i=0; i<pl.nplayers; i++) {
         mvwprintw(lbw->lobbywindow, 6+i, 2, "  - %s", pl.idList[i]);
     }
+}
 
-    wrefresh(lbw->lobbywindow);
-    getch();
+void lobby(int socket, char *connip, char *connport, uint8_t gameId) {
+    int row, col;
+    getmaxyx(stdscr, row, col);
+    
+
+    labsize lbsize;
+    int r = getgamesize(socket, gameId, &lbsize);
+
+    lobby_windows *lbw = draw_lobby_windows(row, col, connip, connport, gameId, lbsize);
+    
+    refreshPlayerList(lbw, socket, gameId);
+
+    int selectedOpt = 0;
+    bool quitLobby = false;
+
+    while(!quitLobby) {
+        changeLobbyHighlight(lbw, selectedOpt, row, col);
+        wrefresh(lbw->lobbywindow);
+        
+        int key = getch();
+
+        switch(key) {
+            case KEY_UP:
+                selectedOpt = posmod(selectedOpt-1, 3);
+                break;
+            case KEY_DOWN:
+                selectedOpt = posmod(selectedOpt+1, 3);
+                break;
+            case 10:
+                switch (selectedOpt) {
+                    case 0:
+                        lbw = draw_lobby_windows(row, col, connip, connport, gameId, lbsize);
+                        refreshPlayerList(lbw, socket, gameId);
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        unreg(socket, gameId);
+                        quitLobby = true;
+                        break;
+                }
+                break;
+            
+        }
+    }
     erase();
     refresh();
 }

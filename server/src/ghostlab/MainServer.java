@@ -117,14 +117,19 @@ public class MainServer {
                 System.out.println(request);
                 switch (request) {
                     case "UNREG":
+                        for (int i=0; i<3; i++)
+                            request += (char)(br.read());
                         if (currentLobby == 0 && currPlayerID == "")
                             dunno.send(os);
                         else {
                             if (gameServers[currentLobby].unregister(currPlayerID)) {
                                 UNROK unrok = new UNROK((byte) currentLobby);
                                 unrok.send(os);
+                                if (gameServers[currentLobby].getNbOfPlayers() == 0)
+                                    gameServers[currentLobby] = null;
                                 currentLobby = 0;
                                 currPlayerID = "";
+                                
                             }
                             else {
                                 dunno.send(os);
@@ -173,6 +178,8 @@ public class MainServer {
                             else { 
                                 REGOK replyNewPl = new REGOK((byte)id);
                                 replyNewPl.send(os);
+                                currentLobby = (byte)id;
+                                currPlayerID = npl.getPlayerID();
                             }
                         }
                     break;
@@ -198,7 +205,8 @@ public class MainServer {
                                 REGOK replyRegis = 
                                     new REGOK((byte) (regis.getGameID()));
                                 replyRegis.send(os);
-                            }
+                                currentLobby = (byte)regID;
+                                currPlayerID = regis.getPlayerID();                            }
                             else {
                                 failed.send(os);
                             }

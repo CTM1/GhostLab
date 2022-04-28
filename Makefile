@@ -21,3 +21,6 @@ runserver: server
 
 runclient: client
 	@bin/client
+
+testlab: server
+	@java -cp classes ghostlab.LabTest

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <ncurses.h>
@@ -29,6 +30,20 @@ void freewindows(struct gamelist_windows *gmw) {
     free(gmw);
 }
 
+void draw_window_decorations(struct gamelist_windows *gmw, int row, int col) {
+    box(gmw->gameswindow, 0, 0);
+    mvwaddch(gmw->gameswindow, 0, 0, ACS_LTEE);
+    box(gmw->buttonswindow, 0, 0);
+    mvwaddch(gmw->buttonswindow, 0, 0, ACS_TTEE);
+    mvwaddch(gmw->buttonswindow, row-5, 0, ACS_BTEE);
+    mvwaddch(gmw->buttonswindow, 0, (col/2), ACS_RTEE);
+    char *options[] = {"* Refresh game list", "* Create a game", "* Quit"};
+    for(int i=0; i<3; i++) {
+        mvwprintw(gmw->buttonswindow, 2+i, 2, "%s", options[i]);
+    }
+
+}
+
 struct gamelist_windows * draw_gamelist_windows(int row, int col, char *connip, char *connport) {
     struct gamelist_windows *gmw = malloc(sizeof(struct gamelist_windows));
     WINDOW *topwindow = newwin(5, col, 0, 0);
@@ -37,27 +52,17 @@ struct gamelist_windows * draw_gamelist_windows(int row, int col, char *connip, 
     char connmsg[50];
     sprintf(connmsg, "Connected to %s:%s", connip, connport);
     mvwprintw(topwindow, 2, col-strlen(connmsg)-5, "%s", connmsg);
-    wrefresh(topwindow);
-
     WINDOW *gameswindow = newwin(row-4, col/2, 4, 0);
-    box(gameswindow, 0, 0);
-    mvwaddch(gameswindow, 0, 0, ACS_LTEE);
-    wrefresh(gameswindow);
-
     WINDOW *buttonswindow = newwin(row-4, (col/2)+1, 4, (col/2)-1);
-    box(buttonswindow, 0, 0);
-    mvwaddch(buttonswindow, 0, 0, ACS_TTEE);
-    mvwaddch(buttonswindow, row-5, 0, ACS_BTEE);
-    mvwaddch(buttonswindow, 0, (col/2), ACS_RTEE);
-    char *options[] = {"* Create a game", "* Quit"};
-    for(int i=0; i<2; i++) {
-        mvwprintw(buttonswindow, 2+i, 2, "%s", options[i]);
-    }
-    wrefresh(buttonswindow);
 
     gmw->topwindow = topwindow;
     gmw->gameswindow = gameswindow;
     gmw->buttonswindow = buttonswindow;
+
+    draw_window_decorations(gmw, row, col);
+    wrefresh(topwindow);
+    wrefresh(gameswindow);
+    wrefresh(buttonswindow);
     return gmw;
 }
 
@@ -68,11 +73,11 @@ void changeHighlight(struct gamelist_windows *gmw, int winselected, int gamesele
         else
             mvwchgat(gmw->gameswindow, 2+i, 2, 30, A_NORMAL, 0, NULL);
     }
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<3; i++) {
         if (i==optselected && winselected == 1)
-            mvwchgat(gmw->buttonswindow, 2+i, 2, 15, A_REVERSE, 0, NULL);
+            mvwchgat(gmw->buttonswindow, 2+i, 2, 19, A_REVERSE, 0, NULL);
         else
-            mvwchgat(gmw->buttonswindow, 2+i, 2, 15, A_NORMAL, 0, NULL);
+            mvwchgat(gmw->buttonswindow, 2+i, 2, 19, A_NORMAL, 0, NULL);
     }
 }
 
@@ -89,13 +94,31 @@ void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port
     curs_set(0);
 }
 
+void refreshGameList(struct gamelist_windows *gmw, int sock, uint8_t *nbGames, bool *gamelistempty, game *gamelist, int row, int col) {
+    werase(gmw->gameswindow);
+    draw_window_decorations(gmw, row, col);
+    if (*nbGames<0)
+        printw("ERROR");
+    if (*nbGames == 0) {
+        mvwprintw(gmw->gameswindow, 2, 2, "There are no games available.");
+        *gamelistempty = true;
+        *nbGames = 1;
+    } else {
+        if (handle_ogame(sock, *nbGames, gamelist) < 0)
+            printw("ERROR 2");
+        for(int i=0; i<*nbGames; i++)
+            mvwprintw(gmw->gameswindow, 2+i, 2, "GAME %d (%d/255 players)", gamelist[i].gameId, gamelist[i].nbPlayers);
+    }
+    wrefresh(gmw->gameswindow);
+}
+
 void gamelist(int sock, char *ip, char *port) {
     int row, col;
     getmaxyx(stdscr, row, col);
 
     curs_set(0);
 
-    int nbGames = handle_games(sock);
+    uint8_t nbGames = handle_games(sock);
 
     unsigned int selectedWindow = 0;
     unsigned int selectedGame = 0;
@@ -104,19 +127,9 @@ void gamelist(int sock, char *ip, char *port) {
     struct gamelist_windows *gmw = draw_gamelist_windows(row, col, ip, port);
     // mvwprintw(gmw->topwindow, 0, 0, "Window %d, button %d", selectedWindow, selectedButton);
     bool gamelistempty = false;
-    game gamelist[nbGames];
-    if (nbGames<0)
-        printw("ERROR");
-    if (nbGames == 0) {
-        mvwprintw(gmw->gameswindow, 2, 2, "There are no games available.");
-        gamelistempty = true;
-        nbGames = 1;
-    } else {
-        if (handle_ogame(sock, nbGames, gamelist) < 0)
-            printw("ERROR 2");
-        for(int i=0; i<nbGames; i++)
-            mvwprintw(gmw->gameswindow, 2+i, 2, "GAME %d (%d/256 players)", gamelist[i].gameId, gamelist[i].nbPlayers);
-    }
+    game *gamelist = malloc(sizeof(game) * nbGames);
+
+    refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
 
     changeHighlight(gmw, selectedWindow, selectedGame, selectedButton, nbGames);
 
@@ -133,14 +146,14 @@ void gamelist(int sock, char *ip, char *port) {
                 break;
             case KEY_UP:
                 if (selectedWindow == 1) {
-                    selectedButton = posmod((selectedButton-1), 2);
+                    selectedButton = posmod((selectedButton-1), 3);
                 } else {
                     selectedGame = posmod(selectedGame-1, nbGames);
                 }
                 break;
             case KEY_DOWN:
                 if (selectedWindow == 1) {
-                    selectedButton = posmod((selectedButton+1), 2);
+                    selectedButton = posmod((selectedButton+1), 3);
                 } else {
                     selectedGame = posmod(selectedGame+1, nbGames);
                 }
@@ -169,13 +182,21 @@ void gamelist(int sock, char *ip, char *port) {
                     }
                 }
                 if (selectedWindow == 1) {
-                    if (selectedButton == 1) {
+                    if (selectedButton == 0) {
+                        send_games(sock);
+                        nbGames = handle_games(sock);
+                        gamelistempty = false;
+                        free(gamelist);
+                        gamelist = malloc(sizeof(game) * nbGames);
+                        refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
+                    }
+                    if (selectedButton == 2) {
                         close(sock);
                         freewindows(gmw);
                         endwin();
                         exit(0);
                     }
-                    if (selectedButton == 0) {
+                    if (selectedButton == 1) {
                         char username[9];
                         char udpport[5];
                         memset(username, 0, 9);
@@ -193,10 +214,15 @@ void gamelist(int sock, char *ip, char *port) {
                             refresh();
                             lobby(sock, ip, port, gameId);
                             gmw = draw_gamelist_windows(row, col, ip, port);
+                            send_games(sock);
+                            nbGames = handle_games(sock);
+                            gamelistempty = false;
+                            free(gamelist);
+                            gamelist = malloc(sizeof(game) * nbGames);
+                            refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
                         } else {
                             printw("ERRORRRRWWWW");
                         }
-                        
                     }
                 }
         }

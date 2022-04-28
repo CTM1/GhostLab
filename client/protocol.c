@@ -157,10 +157,35 @@ int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl) {
         playr[17] = 0;
         if (strncmp(playr, "PLAYR", 5))
             return -1;
-        // printw("%s", playr);
         pl->idList[i] = malloc(9);
         memcpy(pl->idList[i], playr+6, 8);
         pl->idList[i][8] = 0;
     }
     return 0;
+}
+
+int send_games(int sock) {
+    return send(sock, "GAME?***", 8, 0);
+}
+
+int unreg(int sock, uint8_t gameId) {
+    if (send(sock, "UNREG***", 8, 0) < 0)
+        return -1;
+
+    char response[10];
+
+    if (recv_n_bytes(sock, response, 6) < 0)
+        return -1;
+
+    if (!strncmp(response, "UNROK", 5)) {
+        if (recv_n_bytes(sock, response+6, 4) < 0)
+            return -1;
+        uint8_t receivedGameId = (uint8_t)response[6];
+        if (receivedGameId != gameId)
+            return 1;
+        return 0;
+    }
+
+    
+    return 2;
 }
