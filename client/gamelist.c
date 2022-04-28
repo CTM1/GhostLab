@@ -177,6 +177,12 @@ void gamelist(int sock, char *ip, char *port) {
                         refresh();
                         lobby(sock, ip, port, gameId);
                         gmw = draw_gamelist_windows(row, col, ip, port);
+                        send_games(sock);
+                        nbGames = handle_games(sock);
+                        gamelistempty = false;
+                        free(gamelist);
+                        gamelist = malloc(sizeof(game) * nbGames);
+                        refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
                     } else {
                         printw("ERRORRRRWWWW");
                     }
