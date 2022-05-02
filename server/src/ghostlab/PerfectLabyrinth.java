@@ -1,70 +1,132 @@
 package ghostlab;
 
-/**
- * Generates a perfect labyrinth, thus a connex one.
- * Uses binary tree algo
- */
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.Stack;
+
+/**
+ * Adapted from https://github.com/oppenheimj/maze-generator
+ */
 
 public class PerfectLabyrinth implements LabyrInterface {
-	private char w;
-	private char h;
+    private Stack<Node> stack = new Stack<>();
+    private Random rand = new Random();
+    private int[][] maze;
+    private int dimension;
+    private char d;
 
-	/** A cell of the labyrinth
-	 */
-	private class Cell {
-		public boolean north = false; // true means passage open
-		public boolean south = false;
-		public boolean east = false;
-		public boolean west = false;
-	}
+    public char getHeight() {
+        return d;
+    }
 
-	public int tryMove(int x, int y, int dir, int dis) {
-		return 0; // TODO
-	}
+    public char getWidth() {
+        return d;
+    }
 
-	// TODO getSurface
+    public int tryMove(int x, int y, int direction, int distance) {
+        int moved = 0;
+        while (maze[x][y] != 1 && moved < distance && x < dimension && x > 0 && y < dimension && y > 0) {
+            switch (direction) {
+                case 0:
+                    x++;
+                    break;
+                case 1:
+                    x--;
+                    break;
+                case 2:
+                    y--;
+                    break;
+                case 3:
+                    y++;
+                    break;
+            }
+        }
+        return moved;
+    }
 
-	public PerfectLabyrinth(int width, int height) {
-		width = Math.min(1000, width);
-		height = Math.min(1000, height);
+    public class Node {
+        public final int x;
+        public final int y;
 
-		w = (char)Integer.toUnsignedLong(width);
-		h = (char)Integer.toUnsignedLong(height);
+        Node(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
-		Cell[][] surface = new Cell[height][width];
+    public PerfectLabyrinth(int dim) {
+        d = (char) Integer.toUnsignedLong(dim);
+        maze = new int[dim][dim];
+        dimension = dim;
+        this.generateMaze();
+    }
 
-		boolean goingNorth = false;
-		boolean goingWest = false;
-		Random rd = new Random();
+    public void generateMaze() {
+        stack.push(new Node(0, 0));
+        while (!stack.empty()) {
+            Node next = stack.pop();
+            if (validNextNode(next)) {
+                maze[next.y][next.x] = 1;
+                ArrayList<Node> neighbors = findNeighbors(next);
+                randomlyAddNodesToStack(neighbors);
+            }
+        }
+    }
 
-		for (int x = 0; x < height; x++) {
-			for (int y = 0; y < width; y++) {
-				goingNorth = false;
-				goingWest = false;
-				if (y > 0 && x > 0) {
-					goingNorth = rd.nextBoolean();
-					goingWest = !goingNorth;
-				} if (y > 0) {
-					goingWest = true;
-				} else if (x > 0) {
-					goingNorth = true;
-				}
+    public String draw() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < dimension; i++) {
+            for (int j = 0; j < dimension; j++) {
+                sb.append(maze[i][j] == 1 ? "**" : "  ");
+                //sb.append("  ");
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 
+    private boolean validNextNode(Node node) {
+        int numNeighboringOnes = 0;
+        for (int y = node.y - 1; y < node.y + 2; y++) {
+            for (int x = node.x - 1; x < node.x + 2; x++) {
+                if (pointOnGrid(x, y) && pointNotNode(node, x, y) && maze[y][x] == 1) {
+                    numNeighboringOnes++;
+                }
+            }
+        }
+        return (numNeighboringOnes < 3) && maze[node.y][node.x] != 1;
+    }
 
-				if (goingNorth) {
-					surface[x][y].north = true;
-					surface[x][y+1].south = true;
-				}
-				if (goingWest) {
-					surface[x][y].west = true;
-					surface[x+1][y].east = true;
-				}
-			}
-		}
-	}
+    private void randomlyAddNodesToStack(ArrayList<Node> nodes) {
+        int targetIndex;
+        while (!nodes.isEmpty()) {
+            targetIndex = rand.nextInt(nodes.size());
+            stack.push(nodes.remove(targetIndex));
+        }
+    }
 
+    private ArrayList<Node> findNeighbors(Node node) {
+        ArrayList<Node> neighbors = new ArrayList<>();
+        for (int y = node.y - 1; y < node.y + 2; y++) {
+            for (int x = node.x - 1; x < node.x + 2; x++) {
+                if (pointOnGrid(x, y) && pointNotCorner(node, x, y) && pointNotNode(node, x, y)) {
+                    neighbors.add(new Node(x, y));
+                }
+            }
+        }
+        return neighbors;
+    }
 
-	public char getWidth() { return w; }
-	public char getHeight() { return h; }
+    private Boolean pointOnGrid(int x, int y) {
+        return x >= 0 && y >= 0 && x < dimension && y < dimension;
+    }
+
+    private Boolean pointNotCorner(Node node, int x, int y) {
+        return (x == node.x || y == node.y);
+    }
+
+    private Boolean pointNotNode(Node node, int x, int y) {
+        return !(x == node.x && y == node.y);
+    }
 }
