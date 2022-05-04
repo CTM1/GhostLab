@@ -6,7 +6,7 @@ import java.util.Random;
 public class Maze implements LabyrInterface {
   private int dimensionX, dimensionY; // dimension of maze
   private int gridDimensionX, gridDimensionY; // dimension of output grid
-  private char[][] grid; // output grid
+  private boolean[][] grid; // output grid
   private Cell[][] cells; // 2d array of Cells
   private Random random = new Random(); // The random object
 
@@ -20,12 +20,7 @@ public class Maze implements LabyrInterface {
 
   public int tryMove(int x, int y, int direction, int distance) {
     int moved = 0;
-    while (grid[x][y] != 1
-        && moved < distance
-        && x < dimensionX
-        && x > 0
-        && y < dimensionY
-        && y > 0) {
+    while (grid[x][y] && moved < distance && x < dimensionX && x > 0 && y < dimensionY && y > 0) {
       switch (direction) {
         case 0:
           x++;
@@ -47,13 +42,24 @@ public class Maze implements LabyrInterface {
 
   // constructor
   public Maze(int xDimension, int yDimension) {
-    dimensionX = xDimension;
-    dimensionY = yDimension;
-    gridDimensionX = xDimension * 4 + 1;
-    gridDimensionY = yDimension * 2 + 1;
-    grid = new char[gridDimensionX][gridDimensionY];
+    dimensionX = Math.min(xDimension / 4 - 1, 1000);
+    dimensionY = Math.min(yDimension / 2 - 1, 1000);
+    gridDimensionX = xDimension;
+    gridDimensionY = yDimension;
+    grid = new boolean[gridDimensionX][gridDimensionY];
     init();
     generateMaze();
+  }
+
+  public int[] emptyPlace() {
+    int x;
+    int y;
+    do {
+      x = random.nextInt(dimensionX);
+      y = random.nextInt(dimensionY);
+    } while (!grid[x][y]);
+
+    return new int[] {x, y};
   }
 
   private void init() {
@@ -190,7 +196,7 @@ public class Maze implements LabyrInterface {
 
   // draw the maze
   public void updateGrid() {
-    char backChar = ' ', wallChar = 'X', cellChar = ' ', pathChar = '*';
+    boolean backChar = true, wallChar = false, cellChar = true, pathChar = false;
     // fill background
     for (int x = 0; x < gridDimensionX; x++) {
       for (int y = 0; y < gridDimensionY; y++) {
