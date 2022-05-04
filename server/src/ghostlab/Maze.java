@@ -188,12 +188,6 @@ public class Maze implements LabyrInterface {
     }
   }
 
-  // get the projected distance
-  // (A star algorithm consistent)
-  public double getProjectedDistance(Cell current, double travelled, Cell end) {
-    return travelled + Math.abs(current.x - end.x) + Math.abs(current.y - current.x);
-  }
-
   // draw the maze
   public void updateGrid() {
     char backChar = ' ', wallChar = 'X', cellChar = ' ', pathChar = '*';
