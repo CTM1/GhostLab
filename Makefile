@@ -17,7 +17,7 @@ clean:
 	@rm bin/client
 
 runserver: server
-	@java -cp classes ghostlab.MainServer 1337
+	@VERBOSE=true java -cp classes ghostlab.MainServer 1337
 
 runclient: client
 	@bin/client
