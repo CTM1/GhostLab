@@ -69,6 +69,10 @@ public class Labyrinth implements LabyrInterface {
 		}
 	}
 
+	public boolean[][] getSurface() {
+		return this.surface;
+	}
+
 	public static LabyrInterface CTOR(int width, int height) {
 		return new Labyrinth(width, height);
 	}
