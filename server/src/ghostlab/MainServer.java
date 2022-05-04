@@ -25,7 +25,7 @@ public class MainServer {
     static GameServer[] gameServers = new GameServer[MAXGAMES];
     static class MaximumGameCapacityException extends Exception {}
     static class InvalidRequestException extends Exception {
-        public InvalidRequestException(String string) {}
+        public InvalidRequestException(String string) { super(string); }
     }
     
     public static void main(String[] args) {
@@ -53,14 +53,14 @@ public class MainServer {
         try {
             Socket socket = servsock.accept();
             ClientHandler ch = new ClientHandler(socket);
-            ch.run();
+            ch.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
 
-    private static class ClientHandler implements Runnable {
+    private static class ClientHandler extends Thread {
         Socket socket;
 
         public ClientHandler(Socket socket) {
@@ -108,7 +108,7 @@ public class MainServer {
         // We'll read the first five characters into this, then handle the rest in
         // "MESSAGE" classes constructors, every clientMessage will take a BF 
 
-        mainMenuLoop: while(true) {
+        while(true) {
             String request = "";
             try {
                 for (int i = 0; i < 5; i++) {
@@ -117,14 +117,19 @@ public class MainServer {
                 System.out.println(request);
                 switch (request) {
                     case "UNREG":
+                        for (int i=0; i<3; i++)
+                            request += (char)(br.read());
                         if (currentLobby == 0 && currPlayerID == "")
                             dunno.send(os);
                         else {
                             if (gameServers[currentLobby].unregister(currPlayerID)) {
                                 UNROK unrok = new UNROK((byte) currentLobby);
                                 unrok.send(os);
+                                if (gameServers[currentLobby].getNbOfPlayers() == 0)
+                                    gameServers[currentLobby] = null;
                                 currentLobby = 0;
                                 currPlayerID = "";
+                                
                             }
                             else {
                                 dunno.send(os);
@@ -151,13 +156,12 @@ public class MainServer {
                         else {
                             LISTA listA = new LISTA(gameServers[gID]);
                             listA.send(os);
-                            Player[] lobby = gameServers[gID].getLobby();
+                            ArrayList<Player> lobby = gameServers[gID].getLobby();
 
                             for (Player p : lobby) {
-                                if (p != null) {
-                                    PLAYR pmsg = new PLAYR(p);
-                                    pmsg.send(os);
-                                }
+                                PLAYR pmsg = new PLAYR(p);
+                                pmsg.send(os);
+                                System.out.println(p.getPlayerID());
                             }
                         }
                     break;
@@ -174,13 +178,17 @@ public class MainServer {
                             else { 
                                 REGOK replyNewPl = new REGOK((byte)id);
                                 replyNewPl.send(os);
+                                currentLobby = (byte)id;
+                                currPlayerID = npl.getPlayerID();
                             }
                         }
                     break;
                     case "REGIS":
                         REGIS regis = REGIS.parse(br);
                         byte regGameID = regis.getGameID();
+                        System.out.println(regGameID);
                         int regID = Byte.toUnsignedInt(regGameID);
+                        System.out.println(regID);
                         String port = regis.getPort();
 
                         if (gameServers[regID] == null) {
@@ -197,7 +205,8 @@ public class MainServer {
                                 REGOK replyRegis = 
                                     new REGOK((byte) (regis.getGameID()));
                                 replyRegis.send(os);
-                            }
+                                currentLobby = (byte)regID;
+                                currPlayerID = regis.getPlayerID();                            }
                             else {
                                 failed.send(os);
                             }
