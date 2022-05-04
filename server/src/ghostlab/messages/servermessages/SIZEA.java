@@ -13,7 +13,7 @@ public class SIZEA implements ServerMessage {
     private char w;
 
     public SIZEA(GameServer gs) {
-        this.id = gs.getId();
+        this.id = gs.getGameId();
         LabyrInterface l = gs.getLabyrinth();
         this.w = l.getWidth();
         this.h = l.getHeight();

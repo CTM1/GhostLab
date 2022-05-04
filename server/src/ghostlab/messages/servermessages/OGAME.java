@@ -9,7 +9,7 @@ public class OGAME implements ServerMessage {
     private byte nbOfPlayers;
 
     public OGAME(GameServer gs) {
-        this.id = gs.getId();
+        this.id = gs.getGameId();
         this.nbOfPlayers = gs.getNbOfPlayers();
     }
 
