@@ -45,15 +45,15 @@ public class MulticastGameServer {
     }
   }
 
-  public void SCORE(int id, int p, int x, int y) {
+  public void SCORE(String id, int p, int x, int y) {
     try {
-      emit(String.format("SCORE %08d %04d %03d %03d+++", id, p, x, y));
+      emit(String.format("SCORE %s %04d %03d %03d+++", id, p, x, y));
     } catch (Exception e) {
       Logger.log("NTM");
     }
   }
 
-  public void MESSA(int id, String mess) {
+  public void MESSA(String id, String mess) {
     try {
       emit(String.format("MESSA %08d %s+++", id, mess));
     } catch (Exception e) {
@@ -61,9 +61,9 @@ public class MulticastGameServer {
     }
   }
 
-  public void ENDGA(int id, int p) {
+  public void ENDGA(String id, int p) {
     try {
-      emit(String.format("MESSA %08d %04d+++", id, p));
+      emit(String.format("ENDGA %s %04d+++", id, p));
     } catch (Exception e) {
       Logger.log("NTM");
     }
