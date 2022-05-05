@@ -154,8 +154,69 @@ public class GameServer {
         Logger.verbose("fuk u");
       }
     }
-    // placer joueur
-    // envoyer POSIT
+
+    int[] emplacement;
+    for (int i = 0; i < lobby.size() * 2; i++) {
+      emplacement = labyrinth.emptyPlace();
+      Ghost g = new Ghost(emplacement[0], emplacement[1]);
+      ghosts.add(g);
+    }
+
+    for (Player p : lobby) {
+      emplacement = labyrinth.emptyPlace();
+      p.setPos(emplacement[0], emplacement[1]);
+      try {
+        (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
+            .send(handlers.get(p).getOutputStream());
+      } catch (Exception e) {
+        Logger.log("Nop");
+      }
+    }
+
+    gameLoop();
+  }
+
+  /** The main game loop, takes care of score, moves the ghosts around, check collision, etc */
+  public void gameLoop() {
+    long lastGhostMove = System.currentTimeMillis();
+    long timeNow;
+    int[] epl;
+    while (ghosts.size() > 0) {
+      // TODO the loop
+      // TODO THREAD SAFETY !!!!!
+      // lock displacements
+      // Collision detection between ghosts and players
+      for (Ghost g : ghosts) {
+        for (Player p : lobby) {
+          if (p.getX() == g.getX() && p.getY() == g.getY()) {
+            p.addToScore(1);
+            ghosts.remove(g);
+            multicast.SCORE(p.getPlayerID(), p.getScore(), p.getX(), p.getY());
+          }
+        }
+      }
+
+      // move a ghost around every 3 second
+      timeNow = System.currentTimeMillis();
+      if (timeNow - lastGhostMove > 3 * 1000) {
+        lastGhostMove = timeNow;
+        epl = labyrinth.emptyPlace();
+        int index = (int) (Math.random() * ghosts.size());
+        ghosts.get(index).moveGhost(epl[0], epl[1]);
+        multicast.GHOST(epl[0], epl[1]);
+      }
+    }
+
+    // find the winner
+    String id = "";
+    int maxScore = 0;
+    for (Player p : lobby) {
+      if (p.getScore() > maxScore) {
+        id = p.getPlayerID();
+        maxScore = p.getScore();
+      }
+    }
+    multicast.ENDGA(id, maxScore);
   }
 
   public boolean joinGame(REGIS regis, Socket TCPSocket) {
