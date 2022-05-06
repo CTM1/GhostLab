@@ -10,3 +10,5 @@ int send_regis(int sock, char *username, char *udpport, uint8_t gameid);
 int getgamesize(int sock, uint8_t gamenumber, labsize *lbsize);
 int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl);
 int unreg(int sock, uint8_t gameId);
+int send_start(int sock);
+int wait_welcome(int sock, welcome *w);

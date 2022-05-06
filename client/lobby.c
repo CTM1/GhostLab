@@ -58,7 +58,7 @@ void changeLobbyHighlight(lobby_windows *lbw, int optselected, int row, int col)
 void refreshPlayerList(lobby_windows *lbw, int socket, uint8_t gameId) {
     playerlist pl;
     int r = getplayerlist(socket, gameId, &pl);
-    mvwprintw(lbw->lobbywindow, 5, 2, "%d/256 players in lobby", pl.nplayers);
+    mvwprintw(lbw->lobbywindow, 5, 2, "%d/255 players in lobby", pl.nplayers);
     for (int i=0; i<pl.nplayers; i++) {
         mvwprintw(lbw->lobbywindow, 6+i, 2, "  - %s", pl.idList[i]);
     }
@@ -99,6 +99,18 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId) {
                         refreshPlayerList(lbw, socket, gameId);
                         break;
                     case 1:
+                        r = send_start(socket);
+                        wprintw(lbw->lobbywindow, "START, CODE %d\n", r);
+                        wrefresh(lbw->lobbywindow);
+                        welcome w;
+                        r = wait_welcome(socket, &w);
+                        wprintw(lbw->lobbywindow, "WELCO, CODE %d\n", r);
+                        if (r == 0) {
+                            wprintw(lbw->lobbywindow, "GOT WELCO");
+                            wprintw(lbw->lobbywindow, "gameId : %d\nheight : %d\nwidth : %d\nnbghost : %d\nmcip : %s\nmcport : %d\n",
+                            w.gameId, w.height, w.width, w.nbGhosts, w.ip, w.port);
+                        }
+                        wrefresh(lbw->lobbywindow);
                         break;
                     case 2:
                         unreg(socket, gameId);

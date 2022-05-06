@@ -55,6 +55,7 @@ public class GameServer {
 
     this.labyrinth = new Maze(120, 120);
     this.hostTCPSocket = hostTCPSocket;
+    this.ghosts = new ArrayList<Ghost>();
     Logger.verbose(
         "Started new game server %d, multicast on %s:%s\n",
         id, this.hostMulticastAddress.toString(), hostUDPport);
@@ -138,7 +139,7 @@ public class GameServer {
               this.id,
               labyrinth.getHeight(),
               labyrinth.getWidth(),
-              ghosts.size(),
+              (byte)ghosts.size(),
               hostMulticastAddress.toString(),
               hostUDPport);
 
@@ -246,9 +247,10 @@ public class GameServer {
     for (Player p : lobby) {
       if (p.getPlayerID().equals(playerID)) {
         lobby.remove(p);
-        playersReady.remove(0);
-        handlers.get(p).con = false; // stop handler to avoid memleaks
-        handlers.remove(p);
+        // TODO : Remove player handler only when game has already started (so on IQUIT)
+        // playersReady.remove(0);
+        // handlers.get(playerID).con = false; // stop handler to avoid memleaks
+        // handlers.remove(p);
         return true;
       }
     }
