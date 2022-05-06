@@ -6,26 +6,21 @@ import java.util.Random;
 public class Maze implements LabyrInterface {
   private int dimensionX, dimensionY; // dimension of maze
   private int gridDimensionX, gridDimensionY; // dimension of output grid
-  private char[][] grid; // output grid
+  private boolean[][] grid; // output grid
   private Cell[][] cells; // 2d array of Cells
   private Random random = new Random(); // The random object
 
   public char getHeight() {
-    return (char) Integer.toUnsignedLong(dimensionX);
+    return (char) Integer.toUnsignedLong(gridDimensionX);
   }
 
   public char getWidth() {
-    return (char) Integer.toUnsignedLong(dimensionY);
+    return (char) Integer.toUnsignedLong(gridDimensionY);
   }
 
   public int tryMove(int x, int y, int direction, int distance) {
     int moved = 0;
-    while (grid[x][y] != 1
-        && moved < distance
-        && x < dimensionX
-        && x > 0
-        && y < dimensionY
-        && y > 0) {
+    while (grid[x][y] && moved < distance && x < dimensionX && x > 0 && y < dimensionY && y > 0) {
       switch (direction) {
         case 0:
           x++;
@@ -47,13 +42,26 @@ public class Maze implements LabyrInterface {
 
   // constructor
   public Maze(int xDimension, int yDimension) {
-    dimensionX = xDimension;
-    dimensionY = yDimension;
-    gridDimensionX = xDimension * 4 + 1;
-    gridDimensionY = yDimension * 2 + 1;
-    grid = new char[gridDimensionX][gridDimensionY];
+    dimensionX = Math.min((xDimension-1) / 4, 250);
+    dimensionY = Math.min((yDimension-1) / 4, 250);;
+    gridDimensionX = xDimension;
+    gridDimensionY = yDimension;
+    grid = new boolean[gridDimensionX][gridDimensionY];
+
+    Logger.verbose("New Maze: projected: (%d,%d); real: (%d, %d)\n", gridDimensionX, gridDimensionY, dimensionX, dimensionY);
     init();
     generateMaze();
+  }
+
+  public int[] emptyPlace() {
+    int x;
+    int y;
+    do {
+      x = random.nextInt(dimensionX);
+      y = random.nextInt(dimensionY);
+    } while (!grid[x][y]);
+
+    return new int[] {x, y};
   }
 
   private void init() {
@@ -188,15 +196,9 @@ public class Maze implements LabyrInterface {
     }
   }
 
-  // get the projected distance
-  // (A star algorithm consistent)
-  public double getProjectedDistance(Cell current, double travelled, Cell end) {
-    return travelled + Math.abs(current.x - end.x) + Math.abs(current.y - current.x);
-  }
-
   // draw the maze
   public void updateGrid() {
-    char backChar = ' ', wallChar = 'X', cellChar = ' ', pathChar = '*';
+    boolean backChar = true, wallChar = false, cellChar = true, pathChar = false;
     // fill background
     for (int x = 0; x < gridDimensionX; x++) {
       for (int y = 0; y < gridDimensionY; y++) {

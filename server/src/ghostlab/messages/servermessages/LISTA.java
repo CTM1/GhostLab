@@ -10,7 +10,7 @@ public class LISTA implements ServerMessage {
     private byte nbOfPlayers;
 
     public LISTA(GameServer gs) {
-        this.id = gs.getId();
+        this.id = gs.getGameId();
         this.nbOfPlayers = gs.getNbOfPlayers();
     }
 

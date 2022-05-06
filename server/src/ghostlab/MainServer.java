@@ -217,8 +217,10 @@ public class MainServer {
               throw new InvalidRequestException(
                   "Bad request: " + request + ", player not yet properly registered in a game");
             else {
-              /* warn currentLobby of start message so it can start using the TCP Socket */
-              // while (!gs.isOver()) {}
+              MainServer.gameServers[currentLobby].addPlayerReady();
+              MainServer.gameServers[currentLobby].startTheGameIfAllReady();
+	      // wait the game out
+              while (!MainServer.gameServers[currentLobby].isOver()) {}
             }
           default:
             throw new InvalidRequestException("Bad request: " + request);

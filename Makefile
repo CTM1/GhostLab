@@ -24,3 +24,6 @@ runclient: client
 
 testlab: server
 	@java -cp classes ghostlab.LabTest
+
+format: server
+	git ls-files -m | grep "java" | xargs google-java-format -i
