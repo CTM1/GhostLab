@@ -100,12 +100,6 @@ public class GameServer {
             request += (char) (br.read());
           }
           switch (request) {
-              //            case "START":
-              //              daddy.playersReady.add(playa);
-              //              if (daddy.playersReady.size() == daddy.lobby.size()) {
-              //                daddy.startTheGame();
-              //              }
-              //              break;
             case "UPMOV": // TODO
               break;
             case "DOMOV": // TODO
@@ -150,6 +144,10 @@ public class GameServer {
 
       for (Player p : lobby) {
         try {
+          PlayerHandler hl = new PlayerHandler(p, this);
+          handlers.put(p, hl);
+          hl.start();
+
           w.send(handlers.get(p).getOutputStream());
         } catch (Exception e) {
           Logger.verbose("fuk u");
@@ -226,9 +224,9 @@ public class GameServer {
       try {
         Player p = new Player(this.lobby.size(), regis.getPlayerID(), regis.getPort(), TCPSocket);
         lobby.add(p);
-        PlayerHandler hl = new PlayerHandler(p, this);
-        handlers.put(p, hl);
-        hl.start();
+        // PlayerHandler hl = new PlayerHandler(p, this);
+        // handlers.put(p, hl);
+        // hl.start();
       } catch (SocketException e) {
         System.out.println(
             "Failed to register "
