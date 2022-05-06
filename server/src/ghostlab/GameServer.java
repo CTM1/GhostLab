@@ -21,7 +21,7 @@ public class GameServer {
   private InetAddress hostMulticastAddress;
   private String hostUDPport;
   private ArrayList<Player> lobby;
-  private ArrayList<Player> playersReady;
+  private ArrayList<Character> playersReady;
   private ArrayList<Ghost> ghosts;
   private HashMap<Player, PlayerHandler> handlers;
   private LabyrInterface labyrinth;
@@ -33,7 +33,7 @@ public class GameServer {
   public GameServer(byte id, String hostUDPport, String hostID, Socket hostTCPSocket) {
     this.id = id;
     this.lobby = new ArrayList<Player>();
-    this.playersReady = new ArrayList<Player>();
+    this.playersReady = new ArrayList<Character>();
     this.handlers = new HashMap<Player, PlayerHandler>();
 
     String newIP = String.format("224.255.0.%d", id);
@@ -100,12 +100,12 @@ public class GameServer {
             request += (char) (br.read());
           }
           switch (request) {
-            case "START":
-              daddy.playersReady.add(playa);
-              if (daddy.playersReady.size() == daddy.lobby.size()) {
-                daddy.startTheGame();
-              }
-              break;
+              //            case "START":
+              //              daddy.playersReady.add(playa);
+              //              if (daddy.playersReady.size() == daddy.lobby.size()) {
+              //                daddy.startTheGame();
+              //              }
+              //              break;
             case "UPMOV": // TODO
               break;
             case "DOMOV": // TODO
@@ -136,44 +136,46 @@ public class GameServer {
     }
   }
 
-  public void startTheGame() {
-    started = true;
-    WELCO w =
-        new WELCO(
-            this.id,
-            labyrinth.getHeight(),
-            labyrinth.getWidth(),
-            ghosts.size(),
-            hostMulticastAddress.toString(),
-            hostUDPport);
+  public void startTheGameIfAllReady() {
+    if (playersReady.size() == lobby.size()) {
+      started = true;
+      WELCO w =
+          new WELCO(
+              this.id,
+              labyrinth.getHeight(),
+              labyrinth.getWidth(),
+              ghosts.size(),
+              hostMulticastAddress.toString(),
+              hostUDPport);
 
-    for (Player p : lobby) {
-      try {
-        w.send(handlers.get(p).getOutputStream());
-      } catch (Exception e) {
-        Logger.verbose("fuk u");
+      for (Player p : lobby) {
+        try {
+          w.send(handlers.get(p).getOutputStream());
+        } catch (Exception e) {
+          Logger.verbose("fuk u");
+        }
       }
-    }
 
-    int[] emplacement;
-    for (int i = 0; i < lobby.size() * 2; i++) {
-      emplacement = labyrinth.emptyPlace();
-      Ghost g = new Ghost(emplacement[0], emplacement[1]);
-      ghosts.add(g);
-    }
-
-    for (Player p : lobby) {
-      emplacement = labyrinth.emptyPlace();
-      p.setPos(emplacement[0], emplacement[1]);
-      try {
-        (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
-            .send(handlers.get(p).getOutputStream());
-      } catch (Exception e) {
-        Logger.log("Nop");
+      int[] emplacement;
+      for (int i = 0; i < lobby.size() * 2; i++) {
+        emplacement = labyrinth.emptyPlace();
+        Ghost g = new Ghost(emplacement[0], emplacement[1]);
+        ghosts.add(g);
       }
-    }
 
-    gameLoop();
+      for (Player p : lobby) {
+        emplacement = labyrinth.emptyPlace();
+        p.setPos(emplacement[0], emplacement[1]);
+        try {
+          (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
+              .send(handlers.get(p).getOutputStream());
+        } catch (Exception e) {
+          Logger.log("Nop");
+        }
+      }
+
+      gameLoop();
+    }
   }
 
   /** The main game loop, takes care of score, moves the ghosts around, check collision, etc */
@@ -246,7 +248,7 @@ public class GameServer {
     for (Player p : lobby) {
       if (p.getPlayerID().equals(playerID)) {
         lobby.remove(p);
-        playersReady.remove(p);
+        playersReady.remove(0);
         handlers.get(p).con = false; // stop handler to avoid memleaks
         handlers.remove(p);
         return true;
@@ -277,5 +279,9 @@ public class GameServer {
 
   public boolean isOver() {
     return (this.over);
+  }
+
+  public void addPlayerReady() {
+    playersReady.add('a');
   }
 }

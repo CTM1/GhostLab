@@ -103,12 +103,11 @@ public class MainServer {
     String currPlayerID = "";
     REGNO failed = new REGNO();
     DUNNO dunno = new DUNNO();
-    boolean registered = false;
 
     // We'll read the first five characters into this, then handle the rest in
     // "MESSAGE" classes constructors, every clientMessage will take a BF
 
-    while (!registered) {
+    while (true) {
       String request = "";
       try {
         for (int i = 0; i < 5; i++) {
@@ -197,7 +196,6 @@ public class MainServer {
                 replyRegis.send(os);
                 currentLobby = (byte) regID;
                 currPlayerID = regis.getPlayerID();
-                registered = true;
               } else {
                 failed.send(os);
               }
@@ -219,8 +217,10 @@ public class MainServer {
               throw new InvalidRequestException(
                   "Bad request: " + request + ", player not yet properly registered in a game");
             else {
-              /* warn currentLobby of start message so it can start using the TCP Socket */
-              // while (!gs.isOver()) {}
+              MainServer.gameServers[currentLobby].addPlayerReady();
+              MainServer.gameServers[currentLobby].startTheGameIfAllReady();
+	      // wait the game out
+              while (!MainServer.gameServers[currentLobby].isOver()) {}
             }
           default:
             throw new InvalidRequestException("Bad request: " + request);
