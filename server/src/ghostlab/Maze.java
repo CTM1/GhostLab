@@ -11,11 +11,11 @@ public class Maze implements LabyrInterface {
   private Random random = new Random(); // The random object
 
   public char getHeight() {
-    return (char) Integer.toUnsignedLong(dimensionX);
+    return (char) Integer.toUnsignedLong(gridDimensionX);
   }
 
   public char getWidth() {
-    return (char) Integer.toUnsignedLong(dimensionY);
+    return (char) Integer.toUnsignedLong(gridDimensionY);
   }
 
   public int tryMove(int x, int y, int direction, int distance) {
@@ -47,11 +47,13 @@ public class Maze implements LabyrInterface {
 
   // constructor
   public Maze(int xDimension, int yDimension) {
-    dimensionX = xDimension;
-    dimensionY = yDimension;
-    gridDimensionX = xDimension * 4 + 1;
-    gridDimensionY = yDimension * 2 + 1;
+    dimensionX = Math.min((xDimension-1) / 4, 250);
+    dimensionY = Math.min((yDimension-1) / 4, 250);;
+    gridDimensionX = xDimension;
+    gridDimensionY = yDimension;
     grid = new char[gridDimensionX][gridDimensionY];
+
+    System.err.format("New Maze: projected: (%d,%d); real: (%d, %d)\n", gridDimensionX, gridDimensionY, dimensionX, dimensionY);
     init();
     generateMaze();
   }
