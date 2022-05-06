@@ -189,3 +189,42 @@ int unreg(int sock, uint8_t gameId) {
     
     return 2;
 }
+
+int send_start(int sock) {
+    return send(sock, "START***", 8, 0);
+}
+
+int wait_welcome(int sock, welcome *w) {
+    char msg[16];
+    if (recv_n_bytes(sock, msg, 6) < 0)
+        return -1;
+    if (!strncmp(msg, "WELCO ", 6)) {
+        if (recv_n_bytes(sock, msg+6, 10) < 0)
+            return -1;
+        w->gameId = (uint8_t)msg[6];
+        // w->height = (uint8_t)msg[8];
+        // w->width = (uint8_t)msg[10];
+        memcpy(&w->height, msg+8, 2);
+        memcpy(&w->width, msg+11, 2);
+        w->nbGhosts = (uint8_t)msg[14];
+
+        int ipLength;
+        for(ipLength=0; ipLength<16; ipLength++) {
+            char recvchar;
+            if (recv_n_bytes(sock, &recvchar, 1) < 0)
+                return -1;
+            if (recvchar == ' ')
+                break;
+            w->ip[ipLength] = recvchar;
+        }
+        w->ip[ipLength] = 0;
+
+        char port[5];
+        if (recv_n_bytes(sock, port, 4) < 0)
+            return -1;
+        port[4] = 0;
+        w->port = atoi(port);
+        return 0;
+    }
+    return 1;
+}
