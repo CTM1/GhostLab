@@ -103,11 +103,12 @@ public class MainServer {
     String currPlayerID = "";
     REGNO failed = new REGNO();
     DUNNO dunno = new DUNNO();
+    boolean registered = false;
 
     // We'll read the first five characters into this, then handle the rest in
     // "MESSAGE" classes constructors, every clientMessage will take a BF
 
-    while (true) {
+    while (!registered) {
       String request = "";
       try {
         for (int i = 0; i < 5; i++) {
@@ -196,6 +197,7 @@ public class MainServer {
                 replyRegis.send(os);
                 currentLobby = (byte) regID;
                 currPlayerID = regis.getPlayerID();
+                registered = true;
               } else {
                 failed.send(os);
               }
