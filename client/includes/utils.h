@@ -1,6 +1,9 @@
 #include <stdint.h>
 #include <stdint.h>
 
+#ifndef UTILS_H
+#define UTILS_H
+
 #define die(msg, code) { printw("%s", msg); return code; }
 
 typedef struct {
@@ -28,7 +31,10 @@ typedef struct {
 } welcome;
 
 int posmod(int i, int n);
+int divroundup(int a, int b);
 int recv_n_bytes(int sock, void *buffer, int n);
 void format_username(char *username);
 
 extern char *logolines[];
+
+#endif
