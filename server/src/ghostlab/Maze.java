@@ -18,6 +18,10 @@ public class Maze implements LabyrInterface {
     return (char) Integer.toUnsignedLong(gridDimensionY);
   }
 
+  public boolean[][] getSurface() {
+	  return grid;
+  }
+
   public int tryMove(int x, int y, int direction, int distance) {
     int moved = 0;
     while (grid[x][y] && moved < distance && x < dimensionX && x > 0 && y < dimensionY && y > 0) {
@@ -51,6 +55,7 @@ public class Maze implements LabyrInterface {
     Logger.verbose("New Maze: projected: (%d,%d); real: (%d, %d)\n", gridDimensionX, gridDimensionY, dimensionX, dimensionY);
     init();
     generateMaze();
+    updateGrid();
   }
 
   public int[] emptyPlace() {

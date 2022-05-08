@@ -20,7 +20,7 @@ public class MulticastGameServer {
     this.port = Integer.parseInt(hostUDPport);
     this.groupeIP = addr;
 
-    socket = new MulticastSocket();
+    socket = new MulticastSocket(this.port);
     socket.setTimeToLive(15);
   }
 
