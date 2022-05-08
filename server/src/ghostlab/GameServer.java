@@ -94,20 +94,36 @@ public class GameServer {
     }
 
     private void handleRequests() throws IOException {
+      int direction;
+      int distance;
       while (con) {
         String request = "";
         try {
           for (int i = 0; i < 5; i++) {
             request += (char) (br.read());
           }
+
           switch (request) {
-            case "UPMOV": // TODO
+            case "UPMOV":
+              direction = 0;
+              distance = MovementMessage.parseDistance(br);
+              // TODO check for ghosts, players, wall...
               break;
             case "DOMOV": // TODO
+              direction = 1;
+              distance = MovementMessage.parseDistance(br);
+              // TODO check for ghosts, players, wall...
               break;
             case "LEMOV": // TODO
+              direction = 2;
+              distance = MovementMessage.parseDistance(br);
+              // TODO check for ghosts, players, wall...
+
               break;
             case "RIMOV": // TODO
+              direction = 3;
+              distance = MovementMessage.parseDistance(br);
+              // TODO check for ghosts, players, wall...
               break;
             case "SEND?": // TODO
               break;
@@ -139,7 +155,7 @@ public class GameServer {
               this.id,
               labyrinth.getHeight(),
               labyrinth.getWidth(),
-              (byte)ghosts.size(),
+              (byte) ghosts.size(),
               hostMulticastAddress.toString(),
               hostUDPport);
 
