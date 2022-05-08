@@ -107,24 +107,27 @@ public class GameServer {
             case "UPMOV":
               direction = 0;
               distance = MovementMessage.parseDistance(br);
-              // TODO check for ghosts, players, wall...
+              testMoveAndSendBackMOVEF(direction, distance);
               break;
+
             case "DOMOV": // TODO
               direction = 1;
               distance = MovementMessage.parseDistance(br);
-              // TODO check for ghosts, players, wall...
+              testMoveAndSendBackMOVEF(direction, distance);
               break;
+
             case "LEMOV": // TODO
               direction = 2;
               distance = MovementMessage.parseDistance(br);
-              // TODO check for ghosts, players, wall...
-
+              testMoveAndSendBackMOVEF(direction, distance);
               break;
+
             case "RIMOV": // TODO
               direction = 3;
               distance = MovementMessage.parseDistance(br);
-              // TODO check for ghosts, players, wall...
+              testMoveAndSendBackMOVEF(direction, distance);
               break;
+
             case "SEND?": // TODO
               break;
             case "GLIS?": // TODO
@@ -137,6 +140,66 @@ public class GameServer {
           }
         } catch (Exception e) {
           Logger.log("%d : Invalid message from player %s", daddy.getGameId(), playa.getPlayerID());
+          e.printStackTrace();
+        }
+      }
+    }
+
+    private void testMoveAndSendBackMOVEF(int direction, int distance) {
+      ArrayList<Ghost> realMFGs = daddy.getGhosts();
+      boolean[][] maze = daddy.labyrinth.getSurface();
+
+      int moved = 0; // distance traveled
+      int[] position = new int[] {playa.getX(), playa.getY()};
+      boolean metAGhost = false;
+
+      while (!metAGhost && moved < distance && maze[position[0]][position[1]]) {
+        playa.setPos(position[0], position[1]);
+        switch (direction) {
+          case 0:
+            position[0]++;
+            break;
+          case 1:
+            position[0]--;
+            break;
+          case 2:
+            position[1]--;
+            break;
+          case 3:
+            position[1]++;
+            break;
+        }
+        moved++;
+        // check for ghosts
+        for (Ghost g : realMFGs) {
+          if (position[0] == g.getX() && position[1] == g.getY()) {
+            // break the move
+            metAGhost = true;
+
+            // update emit score
+            playa.addToScore(1);
+            multicast.SCORE(playa.getPlayerID(), playa.getScore(), position[0], position[1]);
+
+            // new position
+            try {
+              (new MOVEF(playa)).send(outStream);
+            } catch (Exception e) {
+              Logger.log("Couldn't send message !");
+              e.printStackTrace();
+            }
+
+            // remove ghost
+            realMFGs.remove(g);
+          }
+        }
+      }
+
+      // Send new position
+      if (!metAGhost) {
+        try {
+          (new MOVED(playa)).send(outStream);
+        } catch (Exception e) {
+          Logger.log("Couldn't send message !");
           e.printStackTrace();
         }
       }
@@ -203,15 +266,16 @@ public class GameServer {
       // TODO THREAD SAFETY !!!!!
       // lock displacements
       // Collision detection between ghosts and players
-      for (Ghost g : ghosts) {
-        for (Player p : lobby) {
-          if (p.getX() == g.getX() && p.getY() == g.getY()) {
-            p.addToScore(1);
-            ghosts.remove(g);
-            multicast.SCORE(p.getPlayerID(), p.getScore(), p.getX(), p.getY());
-          }
-        }
-      }
+      // this is now done at move time
+      // for (Ghost g : ghosts) {
+      //  for (Player p : lobby) {
+      //    if (p.getX() == g.getX() && p.getY() == g.getY()) {
+      //      p.addToScore(1);
+      //      ghosts.remove(g);
+      //      multicast.SCORE(p.getPlayerID(), p.getScore(), p.getX(), p.getY());
+      //    }
+      //  }
+      // }
 
       // move a ghost around every 3 second
       timeNow = System.currentTimeMillis();
@@ -271,6 +335,10 @@ public class GameServer {
       }
     }
     return false;
+  }
+
+  public ArrayList<Ghost> getGhosts() {
+    return ghosts;
   }
 
   public byte getGameId() {

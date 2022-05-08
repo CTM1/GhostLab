@@ -2,7 +2,7 @@ package ghostlab;
 
 public class LabTest {
   public static void main(String[] args) {
-    Maze x = new Maze(30, 30);
+    Maze x = new Maze(12, 12);
 
     boolean[][] xx = x.getSurface();
 
