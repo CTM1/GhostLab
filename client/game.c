@@ -101,6 +101,12 @@ char ** get_game_view(int **labyrinth, int labwidth, int labheight, int gwsizex,
     return ret;
 }
 
+void free_game_view(char **render, int height) {
+    for (int i=0; i<height; i++)
+        free(render[i]);
+    free(render);
+}
+
 void maingame(int sock, char *connip, char *connport, welcome *welco) {
     int row, col;
     getmaxyx(stdscr, row, col);
@@ -153,13 +159,11 @@ void maingame(int sock, char *connip, char *connport, welcome *welco) {
             case KEY_DOWN:
                 posY += 1;
         }
+        free_game_view(render, gwsizey-2);
         render = get_game_view(lab, 9, 9, gwsizex-1, gwsizey-2, posX, posY);
         for(int i=0; i<gwsizey-2; i++) {
             mvwprintw(gw->gamewindow, 1+i, 1, "%s", render[i]);
         }
         wrefresh(gw->gamewindow);
-    }
-    
-    
-    
+    } 
 }
