@@ -77,11 +77,11 @@ int main(int argc, char **argv) {
     getmaxyx(stdscr, row, col);
 
     int sock = -1;
-    char ip[16];
-    char port[6];
+    char ip[16] = "127.0.0.1";
+    char port[6] = "1337";
     display_main_screen(row, col);
     while(sock < 0) {
-        get_main_screen_input(row, col, ip, port);
+        // get_main_screen_input(row, col, ip, port);
         sock = connect_server(ip, port);
         if (sock < 0) {
             char errormsg[] = "An error occured during server connection";
