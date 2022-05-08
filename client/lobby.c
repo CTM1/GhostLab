@@ -12,6 +12,8 @@
 #include <errno.h>
 
 #include "includes/protocol.h"
+#include "includes/game.h"
+
 
 typedef struct {
     WINDOW *topwindow;
@@ -106,9 +108,12 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId) {
                         r = wait_welcome(socket, &w);
                         wprintw(lbw->lobbywindow, "WELCO, CODE %d\n", r);
                         if (r == 0) {
-                            wprintw(lbw->lobbywindow, "GOT WELCO");
-                            wprintw(lbw->lobbywindow, "gameId : %d\nheight : %d\nwidth : %d\nnbghost : %d\nmcip : %s\nmcport : %d\n",
-                            w.gameId, w.height, w.width, w.nbGhosts, w.ip, w.port);
+                            // wprintw(lbw->lobbywindow, "GOT WELCO");
+                            // wprintw(lbw->lobbywindow, "gameId : %d\nheight : %d\nwidth : %d\nnbghost : %d\nmcip : %s\nmcport : %d\n",
+                            // w.gameId, w.height, w.width, w.nbGhosts, w.ip, w.port);
+                            erase();
+                            refresh();
+                            maingame(socket, connip, connport, &w);
                         }
                         wrefresh(lbw->lobbywindow);
                         break;
