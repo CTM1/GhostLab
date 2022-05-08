@@ -41,4 +41,6 @@ public interface LabyrInterface {
   public char getWidth();
 
   public char getHeight();
+
+  public boolean[][] getSurface();
 }
