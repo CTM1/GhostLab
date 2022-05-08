@@ -60,17 +60,35 @@ public class Maze implements LabyrInterface {
         dir = dirs.get(random.nextInt(dirs.size()));
 
         if (dir == 0) { // carving North
+          // remove walls of the cell itsel
           surface[x][y] = true;
           surface[x + 1][y] = true;
+
+          if (surface[x][y - 1]) surface[x + 1][y - 1] = true;
+
+          if (surface[x][y + 1]) surface[x + 1][y + 1] = true;
+
+          // remove walls of the neighbor if there is a neighbor
           if (x + 3 < width) {
             surface[x + 2][y] = true;
+            surface[x + 2][y - 1] = true;
+            surface[x + 2][y + 1] = true;
             surface[x + 3][y] = true;
           }
         } else if (dir == 1) { // carving east
           surface[x][y] = true;
           surface[x][y - 1] = true;
+
+          // carving the intermediaries "corner" array-cells
+          if (surface[x - 1][y - 2]) surface[x - 1][y - 1] = true;
+
+          if (surface[x + 1][y - 2]) surface[x + 1][y - 1] = true;
+
           if (y - 3 > 0) {
             surface[x][y - 2] = true;
+            surface[x - 1][y - 2] = true;
+            surface[x + 1][y - 2] = true;
+
             surface[x][y - 3] = true;
           }
         }
