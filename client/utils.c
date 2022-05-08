@@ -4,6 +4,10 @@ int posmod(int i, int n) {
     return (i % n + n) % n;
 }
 
+int divroundup(int a, int b) {
+    return (a + (b - 1)) / b;
+}
+
 int recv_n_bytes(int sock, void *buffer, int n) {
     int totalreceived = 0;
     while(totalreceived < n) {
