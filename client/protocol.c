@@ -225,6 +225,13 @@ int wait_welcome(int sock, welcome *w) {
             return -1;
         port[4] = 0;
         w->port = atoi(port);
+        
+        char tail[3];
+        if (recv_n_bytes(sock, tail, 3) < 0)
+            return -1;
+
+        if (strncmp(tail, "***", 3))
+            return 2;
         return 0;
     }
     return 1;
@@ -259,9 +266,11 @@ int handle_posit(int sock, position_score *pos) {
     if (recv_n_bytes(sock, msg, 6) < 0)
         return -1;
     if (!strncmp(msg, "POSIT ", 6)) {
+        fprintf(stderr, "GOT POSIT\n");
         if (recv_n_bytes(sock, msg+6, 19) < 0)
             return -1;
         fill_pos_from_payload(msg, pos, 15, 19);
+        fprintf(stderr, "x=%d, y=%d\n", pos->x, pos->y);
         return 0;
     }
     return 1;

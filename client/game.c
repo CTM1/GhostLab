@@ -107,63 +107,87 @@ void free_game_view(char **render, int height) {
     free(render);
 }
 
+void refresh_lab_view(int **lab, game_windows *gw, welcome *welco, position_score *pos, int gwsizex, int gwsizey) {
+    char **render = get_game_view(lab, welco->width, welco->height, gwsizex-1, gwsizey-2, pos->x, pos->y);
+    for(int i=0; i<gwsizey-2; i++) {
+        mvwprintw(gw->gamewindow, 1+i, 1, "%s", render[i]);
+    }
+    free_game_view(render, gwsizey-2);
+    wrefresh(gw->gamewindow);
+}
+
+//WARNING : ONLY WORKS FOR 1 LENGTH MOVEMENTS FOR NOW
+void refresh_lab_from_movement(int **lab, position_score *pos, position_score *prevpos, int movdir) {
+    fprintf(stderr, "Prev (%d, %d)\nNew (%d, %d)\nMove %d\n\n", prevpos->x, prevpos->y, pos->x, pos->y, movdir);
+    if (prevpos->x == pos->x && prevpos->y == pos->y) {
+        switch (movdir) {
+            case 0: //LEFT
+                lab[pos->y][pos->x - 1] = 0;
+                break;
+            case 1: //RIGHT
+                lab[pos->y][pos->x + 1] = 0;
+                break;
+            case 2: //UP
+                lab[pos->y-1][pos->x] = 0;
+                break;
+            case 3: //DOWN
+                lab[pos->y+1][pos->x] = 0;
+                break;
+        }
+    }
+}
+
+void do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos) {
+    sendmov(sock, movetype, 1);
+    memcpy(prevpos, pos, sizeof(position_score));
+    get_move_response(sock, pos);
+    refresh_lab_from_movement(lab, pos, prevpos, movedir);
+}
+
 void maingame(int sock, char *connip, char *connport, welcome *welco) {
     int row, col;
     getmaxyx(stdscr, row, col);
     int gwsizex = (2*col)/3-2;
     int gwsizey = row-4-4;
 
-    int labtestvalues[9][9] =   {
-                        {0, 0, 0, 0, 0, 0, 0, 0, 0},
-                        {0, 1, 1, 1, 1, 1, 1, 1, 0},
-                        {0, 0, 0, 0, 0, 0, 0, 1, 0},
-                        {0, 1, 1, 1, 1, 1, 0, 1, 0},
-                        {0, 1, 0, 0, 0, 1, 0, 1, 0},
-                        {0, 1, 0, 1, 1, 1, 0, 1, 0},
-                        {0, 1, 0, 0, 0, 0, 0, 1, 0},
-                        {0, 1, 1, 1, 1, 1, 1, 1, 0},
-                        {0, 0, 0, 0, 0, 0, 0, 0, 0}
-                    };
-
-    int **lab = malloc(9 * sizeof(int*));
-    for (int i=0; i<9; i++)
-        lab[i] = malloc(9 * sizeof(int));
-
-    for(int y=0; y<9; y++) {
-        for (int x=0; x<9; x++) {
-            lab[y][x] = labtestvalues[y][x];
+    int **lab = malloc(welco->height * sizeof(int*));
+    for (int i=0; i<welco->height; i++) {
+        lab[i] = malloc(welco->width * sizeof(int));
+        for(int j=0; j<welco->width; j++) {
+            lab[i][j] = 1;
         }
     }
 
+    position_score *prevpos = malloc(sizeof(position_score));
+    position_score *pos = malloc(sizeof(position_score));
+    int r = handle_posit(sock, pos);
+    
+
     game_windows *gw = draw_game_windows(row, col, connip, connport, welco->gameId);
-    int posX = 4;
-    int posY = 5;
-    char **render = get_game_view(lab, 9, 9, gwsizex-1, gwsizey-2, 4, 5);
-    for(int i=0; i<gwsizey-2; i++) {
-        mvwprintw(gw->gamewindow, 1+i, 1, "%s", render[i]);
-    }
-    wrefresh(gw->gamewindow);
+
+    mvwprintw(gw->chatwindow, 1, 1, "POSIT RES %d", r);
+    wrefresh(gw->chatwindow);
+
+    refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
+
+
 
     while(true) {
         int key = getch();
         switch (key) {
             case KEY_LEFT:
-                posX -= 1;
+                do_move(sock, "LEMOV", 0, lab, pos, prevpos);
                 break;
             case KEY_RIGHT:
-                posX += 1;
+                do_move(sock, "RIMOV", 1, lab, pos, prevpos);
                 break;
             case KEY_UP:
-                posY -= 1;
+                do_move(sock, "UPMOV", 2, lab, pos, prevpos);
                 break;
             case KEY_DOWN:
-                posY += 1;
+                do_move(sock, "DOMOV", 3, lab, pos, prevpos);
+                break;
         }
-        free_game_view(render, gwsizey-2);
-        render = get_game_view(lab, 9, 9, gwsizex-1, gwsizey-2, posX, posY);
-        for(int i=0; i<gwsizey-2; i++) {
-            mvwprintw(gw->gamewindow, 1+i, 1, "%s", render[i]);
-        }
-        wrefresh(gw->gamewindow);
+        refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
     } 
 }
