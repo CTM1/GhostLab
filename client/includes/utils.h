@@ -30,6 +30,17 @@ typedef struct {
     int port;
 } welcome;
 
+typedef struct {
+    int x;
+    int y;
+    int score;
+} position_score;
+typedef struct {
+    uint8_t nplayers;
+    char **usernames;
+    position_score **pos_scores;
+} glist;
+
 int posmod(int i, int n);
 int divroundup(int a, int b);
 int recv_n_bytes(int sock, void *buffer, int n);
