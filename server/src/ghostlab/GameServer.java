@@ -131,20 +131,30 @@ public class GameServer {
 
             case "SEND?": // TODO
               break;
-            case "GLIS?": // TODO
+            case "GLIS?":
               for (int i = 0; i < 3; i++) br.read(); // read end of message ***
 
               (new GLIS(daddy.lobby.size())).send(outStream);
 
-              // sort players by descending score and send GPLYR
-              Collections.sort(
-                  daddy.lobby, (p1, p2) -> ((Integer) p1.getScore()).compareTo(p2.getScore()));
+              // send GPLYR
               for (Player p : daddy.lobby) {
                 (new GPLYR(p)).send(outStream);
               }
 
               break;
             case "MALL?": // TODO
+              br.read(); // espace
+              char[] buff = new char[200];
+              int read = 0;
+              while (buff[read] != '*' && read < 200) {
+                buff[read] = (char) br.read();
+                read++;
+              }
+
+              daddy.multicast.MESSA(playa.getPlayerID(), new String(buff));
+
+              outStream.write("MALL!".getBytes());
+              outStream.flush();
               break;
             default:
               // TODO Gobye
@@ -187,6 +197,10 @@ public class GameServer {
           if (position[0] == g.getX() && position[1] == g.getY()) {
             // break the move
             metAGhost = true;
+
+            // update the lobby order to be highest first
+            Collections.sort(
+                daddy.lobby, (p1, p2) -> ((Integer) p1.getScore()).compareTo(p2.getScore()));
 
             // update emit score
             playa.addToScore(1);
