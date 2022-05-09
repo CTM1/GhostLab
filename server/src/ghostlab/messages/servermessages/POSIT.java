@@ -16,5 +16,6 @@ public class POSIT implements ServerMessage {
 
   public void send(OutputStream os) throws IOException {
     os.write(String.format("POSIT %s %s %s***", this.playerID, this.x, this.y).getBytes());
+    os.flush();
   }
 }
