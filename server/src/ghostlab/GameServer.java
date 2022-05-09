@@ -53,7 +53,7 @@ public class GameServer {
       System.out.println("Failed to register " + hostID + " to game " + id + " at index 0");
     }
 
-    this.labyrinth = new Maze(120, 120);
+    this.labyrinth = new RecursiveMaze(120, 120);
     this.hostTCPSocket = hostTCPSocket;
     this.ghosts = new ArrayList<Ghost>();
     Logger.verbose(

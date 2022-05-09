@@ -4,15 +4,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class POSIT implements ServerMessage {
-  String cnt;
+  String playerID;
+  String x;
+  String y;
 
   public POSIT(String id, int x, int y) {
-    this.cnt =
-        String.format(
-            "POSIT %s %d %d***", id, x, y);
+    this.playerID = id;
+    this.x = String.format("%03d", x);
+    this.y = String.format("%03d", y);
   }
 
   public void send(OutputStream os) throws IOException {
-    os.write(cnt.getBytes());
+    os.write(String.format("POSIT %s %s %s***", this.playerID, this.x, this.y).getBytes());
   }
 }

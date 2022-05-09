@@ -4,9 +4,12 @@ import java.util.Random;
 
 
 
-public class RecursiveMaze {
+public class RecursiveMaze implements LabyrInterface {
 
-    boolean grid[][];
+    private boolean grid[][];
+    private int width;
+    private int height;
+    private Random rand = new Random();
 
     private void recursiveChamber(boolean grid[][], int startX, int startY, int endX, int endY) {
 
@@ -20,7 +23,7 @@ public class RecursiveMaze {
         }
             
         // System.out.println(String.format("=============== (%d, %d) to (%d, %d)\n"+this, startX, startY, endX, endY));
-        Random rand = new Random();
+        
         boolean horizontal;
         if (chamberSizeX < chamberSizeY)
             horizontal = true;
@@ -77,7 +80,9 @@ public class RecursiveMaze {
     }
 
     public RecursiveMaze(int width, int height) {
-        grid = new boolean[height][width];
+        this.grid = new boolean[height][width];
+        this.width = width;
+        this.height = height;
 
         //fill outer walls
         for(int y=0; y<height; y++) {
@@ -88,6 +93,55 @@ public class RecursiveMaze {
         }
 
         recursiveChamber(grid, 1, 1, width-2, height-2);
+    }
+
+    public char getWidth() {
+        return (char) Integer.toUnsignedLong(width);
+    }
+
+    public char getHeight() {
+        return (char) Integer.toUnsignedLong(height);
+    }
+
+    public int[] emptyPlace() {
+        int tries = 0;
+        while(tries < (width*height)*2) {
+            int x = rand.nextInt(0, width);
+            int y = rand.nextInt(0, height);
+            if (!grid[y][x])
+                return new int[]{x, y};
+            tries++;
+        }
+        return null;
+    }
+
+    public int tryMove(int x, int y, int direction, int distance) {
+        int npX = x;
+        int npY = y;
+        int wx = 0;
+        int wy = 0;
+        switch(direction) {
+            case 0:
+                wy = -1;
+                break;
+            case 1:
+                wy = 1;
+                break;
+            case 2:
+                wx = -1;
+                break;
+            case 3:
+                wx = 1;
+                break;
+        }
+        for(int i=0; i<distance; i++) {
+            if (grid[npY+wy][npX+wx])
+                return i;
+            npX += wx;
+            npY += wy;
+        }
+
+        return distance;
     }
 
     public void draw() {
