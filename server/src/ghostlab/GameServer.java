@@ -54,7 +54,7 @@ public class GameServer {
       System.out.println("Failed to register " + hostID + " to game " + id + " at index 0");
     }
 
-    this.labyrinth = new RecursiveMaze(120, 120);
+    this.labyrinth = new RecursiveMaze(20, 20);
     this.hostTCPSocket = hostTCPSocket;
     this.ghosts = new ArrayList<Ghost>();
     Logger.verbose(
@@ -108,24 +108,28 @@ public class GameServer {
             case "UPMOV":
               direction = 0;
               distance = MovementMessage.parseDistance(br);
+              MovementMessage.getMsgTail(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
             case "DOMOV":
               direction = 1;
               distance = MovementMessage.parseDistance(br);
+              MovementMessage.getMsgTail(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
             case "LEMOV":
               direction = 2;
               distance = MovementMessage.parseDistance(br);
+              MovementMessage.getMsgTail(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
             case "RIMOV":
               direction = 3;
               distance = MovementMessage.parseDistance(br);
+              MovementMessage.getMsgTail(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
@@ -175,22 +179,29 @@ public class GameServer {
       int[] position = new int[] {playa.getX(), playa.getY()};
       boolean metAGhost = false;
 
-      while (!metAGhost && moved < distance && maze[position[0]][position[1]]) {
-        playa.setPos(position[0], position[1]);
+      // System.out.println(String.format("Moving from (%d, %d), dist %d", position[0], position[1], distance));
+
+      while (!metAGhost && moved < distance) {
         switch (direction) {
           case 0:
-            position[0]++;
-            break;
-          case 1:
-            position[0]--;
-            break;
-          case 2:
             position[1]--;
             break;
-          case 3:
+          case 1:
             position[1]++;
             break;
+          case 2:
+            position[0]--;
+            break;
+          case 3:
+            position[0]++;
+            break;
         }
+
+        if (!maze[position[1]][position[0]])
+          playa.setPos(position[0], position[1]);
+        else
+          break;
+
         moved++;
         // check for ghosts
         for (Ghost g : realMFGs) {
@@ -220,6 +231,7 @@ public class GameServer {
         }
       }
 
+      // System.out.println(String.format("New pos, (%d, %d), travelled %d", position[0], position[1], moved));
       // Send new position
       if (!metAGhost) {
         try {
@@ -278,6 +290,7 @@ public class GameServer {
         }
       }
 
+      System.out.println(labyrinth);
       gameLoop();
     }
   }
