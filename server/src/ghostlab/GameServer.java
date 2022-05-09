@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class GameServer {
@@ -110,19 +111,19 @@ public class GameServer {
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
-            case "DOMOV": // TODO
+            case "DOMOV":
               direction = 1;
               distance = MovementMessage.parseDistance(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
-            case "LEMOV": // TODO
+            case "LEMOV":
               direction = 2;
               distance = MovementMessage.parseDistance(br);
               testMoveAndSendBackMOVEF(direction, distance);
               break;
 
-            case "RIMOV": // TODO
+            case "RIMOV":
               direction = 3;
               distance = MovementMessage.parseDistance(br);
               testMoveAndSendBackMOVEF(direction, distance);
@@ -131,6 +132,17 @@ public class GameServer {
             case "SEND?": // TODO
               break;
             case "GLIS?": // TODO
+              for (int i = 0; i < 3; i++) br.read(); // read end of message ***
+
+              (new GLIS(daddy.lobby.size())).send(outStream);
+
+              // sort players by descending score and send GPLYR
+              Collections.sort(
+                  daddy.lobby, (p1, p2) -> ((Integer) p1.getScore()).compareTo(p2.getScore()));
+              for (Player p : daddy.lobby) {
+                (new GPLYR(p)).send(outStream);
+              }
+
               break;
             case "MALL?": // TODO
               break;
