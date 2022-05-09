@@ -158,4 +158,8 @@ public class RecursiveMaze implements LabyrInterface {
         }
         return out;
     }
+
+    public boolean[][] getSurface() {
+       return grid;
+    }
 }

@@ -15,4 +15,9 @@ public class MovementMessage {
     int d = Integer.parseInt(dist);
     return d;
   }
+
+  public static void getMsgTail(BufferedReader br) throws IOException {
+    for (int i=0; i<3; i++)
+      br.read();
+  }
 }
