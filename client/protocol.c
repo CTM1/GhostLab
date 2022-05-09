@@ -1,5 +1,6 @@
 #include <endian.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
@@ -187,7 +188,7 @@ int unreg(int sock, uint8_t gameId) {
     }
 
     
-    return 2;
+    return 1;
 }
 
 int send_start(int sock) {
@@ -227,4 +228,135 @@ int wait_welcome(int sock, welcome *w) {
         return 0;
     }
     return 1;
+}
+
+void fill_pos_from_payload(char *payload, position_score *pos, int xstartindex, int ystartindex) {
+    char posX_str[4];
+    char posY_str[4];
+    memcpy(posX_str, payload+xstartindex, 3);
+    posX_str[3] = 0;
+    memcpy(posY_str, payload+ystartindex, 3);
+    posY_str[3] = 0;
+
+    int posX = atoi(posX_str);
+    int posY = atoi(posY_str);
+    pos->x = posX;
+    pos->y = posY;
+}
+
+void fill_score_from_payload(char *payload, position_score *pos, int scorestartindex) {
+    char score_str[5];
+    memcpy(score_str, payload+scorestartindex, 4);
+    score_str[4] = 0;
+
+    int score = atoi(score_str);
+    pos->score = score;
+}
+
+int handle_posit(int sock, position_score *pos) {
+    pos->score = -1;
+    char msg[25];
+    if (recv_n_bytes(sock, msg, 6) < 0)
+        return -1;
+    if (!strncmp(msg, "POSIT ", 6)) {
+        if (recv_n_bytes(sock, msg+6, 19) < 0)
+            return -1;
+        fill_pos_from_payload(msg, pos, 15, 19);
+        return 0;
+    }
+    return 1;
+}
+
+int sendmov(int sock, char *move, int dist) {
+    char request[13];
+    sprintf(request, "%s %03d***", move, dist);
+    if (send(sock, request, 12, 0) < 0)
+        return -1;
+    return 0;
+};
+
+int get_move_response(int sock, position_score *pos) {
+    pos->score = -1;
+    char response[21];
+    if (recv_n_bytes(sock, response, 6) < 0)
+        return -1;
+    if (!strncmp(response, "MOVE! ", 6)) {
+        if (recv_n_bytes(sock, response+6, 10) < 0)
+            return -1;
+        fill_pos_from_payload(response, pos, 6, 10);
+        return 0;
+    } else if (!strncmp(response, "MOVEF ", 6)) {
+        if (recv_n_bytes(sock, response+6, 15) < 0)
+            return -1;
+        fill_pos_from_payload(response, pos, 6, 10);
+        fill_score_from_payload(response, pos, 14);
+        return 0;
+    }
+    return 1;
+}
+
+int iquit(int sock) {
+    if (send(sock, "IQUIT***", 8, 0) < 0)
+        return -1;
+    char response[8];
+    if (recv_n_bytes(sock, response, 8) < 0)
+        return -1;
+    if (!strncmp(response, "GOBYE***", 8))
+        return 0;
+    return 1;
+}
+
+int get_glist(int sock, glist *glist) {
+    if (send(sock, "GLIS?***", 8, 0) < 0)
+        return -1;
+    char response[10];
+    if (recv_n_bytes(sock, response, 10) < 0)
+        return -1;
+    uint8_t nbPlayers = (uint8_t)response[6];
+    glist->nplayers = nbPlayers;
+    glist->usernames = malloc(nbPlayers * sizeof(char*));
+    glist->pos_scores = malloc(nbPlayers * sizeof(position_score*));
+    char gplyr_msg[30];
+    for (int i=0; i<nbPlayers; i++) {
+        if (recv_n_bytes(sock, gplyr_msg, 30) < 0)
+            return -1;
+        if (strncmp(gplyr_msg, "GPLYR ", 6))
+            return 1;
+        glist->usernames[i] = malloc(9);
+        memcpy(glist->usernames[i], gplyr_msg+6, 8);
+        glist->usernames[i][8] = 0;
+
+        glist->pos_scores[i] = malloc(sizeof(position_score));
+        fill_pos_from_payload(gplyr_msg, glist->pos_scores[i], 15, 19);
+        fill_score_from_payload(gplyr_msg, glist->pos_scores[i], 23);
+    }
+    return 0;
+}
+
+int send_mall(int sock, char *msg, int msglength) {
+    char request[9+msglength];
+    sprintf(request, "MALL? %s***", msg);
+    if (send(sock, request, 9+msglength, 0) < 0)
+        return -1;
+    char response[8];
+    if (recv_n_bytes(sock, response, 8) < 0)
+        return -1;
+    if (strncmp(response, "MALL!***", 8))
+        return 1;
+    return 0;
+}
+
+int private_msg(int sock, char playerid[8], char *msg, int msglength) {
+    char request[18+msglength];
+    sprintf(request, "MALL? %s***", msg);
+    if (send(sock, request, 18+msglength, 0) < 0)
+        return -1;
+    char response[8];
+    if (recv_n_bytes(sock, response, 8) < 0)
+        return -1;
+    if (!strncmp(response, "NSEND***", 8))
+        return 2;
+    if (strncmp(response, "SEND!***", 8))
+        return 1;
+    return 0;
 }
