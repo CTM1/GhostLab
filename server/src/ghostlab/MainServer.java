@@ -226,15 +226,11 @@ public class MainServer {
             throw new InvalidRequestException("Bad request: " + request);
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
         failed.send(os);
-
-        if (++failedTries == 3) {
-          System.out.println(
-              "Too many bad requests from " + client.toString() + ", closing their connection.");
-          client.close();
-          return;
-        }
+        client.close();
+        Logger.log("Drop kicked them into space.\n\n");
+        return;
       }
     }
   }
