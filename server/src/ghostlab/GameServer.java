@@ -96,6 +96,10 @@ public class GameServer {
       }
     }
 
+    public void propagateMessage(String from, String mess) {
+      String content = String.format("MESSP %s %s+++", from, mess);
+    }
+
     private void handleRequests() throws IOException {
       int direction;
       int distance;
@@ -136,7 +140,14 @@ public class GameServer {
               break;
 
             case "SEND?": // TODO
-              break;
+              SENDQ info = SENDQ.parse(br);
+              if (daddy.sendMessage(playa.getPlayerID(), info.getID(), info.getMessage())) {
+                outStream.write("SEND!***".getBytes());
+              } else {
+                outStream.write("NSEND***".getBytes());
+              }
+              outStream.flush();
+
             case "GLIS?":
               for (int i = 0; i < 3; i++) br.read(); // read end of message ***
 
@@ -184,7 +195,8 @@ public class GameServer {
       int[] position = new int[] {playa.getX(), playa.getY()};
       boolean metAGhost = false;
 
-      // System.out.println(String.format("Moving from (%d, %d), dist %d", position[0], position[1], distance));
+      // System.out.println(String.format("Moving from (%d, %d), dist %d", position[0], position[1],
+      // distance));
 
       while (!metAGhost && moved < distance) {
         switch (direction) {
@@ -202,10 +214,8 @@ public class GameServer {
             break;
         }
 
-        if (!maze[position[1]][position[0]])
-          playa.setPos(position[0], position[1]);
-        else
-          break;
+        if (!maze[position[1]][position[0]]) playa.setPos(position[0], position[1]);
+        else break;
 
         moved++;
         // check for ghosts
@@ -241,7 +251,8 @@ public class GameServer {
         }
       }
 
-      // System.out.println(String.format("New pos, (%d, %d), travelled %d", position[0], position[1], moved));
+      // System.out.println(String.format("New pos, (%d, %d), travelled %d", position[0],
+      // position[1], moved));
       // Send new position
       if (!metAGhost) {
         try {
@@ -347,6 +358,18 @@ public class GameServer {
       }
     }
     multicast.ENDGA(id, maxScore);
+  }
+
+  public synchronized boolean sendMessage(String to, String from, String content) {
+    // First, let's find the player
+    for (Player p : lobby) {
+      if (p.getPlayerID().equals(to)) {
+        p.propagateMessage(from, content);
+        return true;
+      }
+    }
+
+    return false; // OK if we found the player in the lobby
   }
 
   public boolean joinGame(REGIS regis, Socket TCPSocket) {
