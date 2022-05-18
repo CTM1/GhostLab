@@ -25,6 +25,7 @@ public class GameServer {
   private ArrayList<Character> playersReady;
   private ArrayList<Ghost> ghosts;
   private HashMap<Player, PlayerHandler> handlers;
+  private HashMap<Socket, Boolean> endedPeacefully;
   private LabyrInterface labyrinth;
   private boolean started = false;
   private boolean over = false;
@@ -36,6 +37,7 @@ public class GameServer {
     this.lobby = new ArrayList<Player>();
     this.playersReady = new ArrayList<Character>();
     this.handlers = new HashMap<Player, PlayerHandler>();
+    this.endedPeacefully = new HashMap<Socket, Boolean>();
 
     String newIP = String.format("224.255.0.%d", id);
     try {
@@ -161,8 +163,10 @@ public class GameServer {
               outStream.flush();
               break;
             default:
-              // TODO Gobye
-              break;
+              outStream.write("GOBYE!".getBytes());
+              outStream.flush();
+              endedPeacefully.put(playa.getTCPSocket(), false);
+              return;
           }
         } catch (Exception e) {
           Logger.log("%d : Invalid message from player %s", daddy.getGameId(), playa.getPlayerID());
@@ -344,9 +348,7 @@ public class GameServer {
       try {
         Player p = new Player(this.lobby.size(), regis.getPlayerID(), regis.getPort(), TCPSocket);
         lobby.add(p);
-        // PlayerHandler hl = new PlayerHandler(p, this);
-        // handlers.put(p, hl);
-        // hl.start();
+        this.endedPeacefully.put(p.getTCPSocket(), true);
       } catch (SocketException e) {
         System.out.println(
             "Failed to register "
@@ -374,6 +376,10 @@ public class GameServer {
       }
     }
     return false;
+  }
+
+  public HashMap<Socket, Boolean> getEndedPeacefully() {
+    return this.endedPeacefully;
   }
 
   public ArrayList<Ghost> getGhosts() {
