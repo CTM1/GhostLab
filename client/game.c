@@ -263,7 +263,7 @@ void handle_score(int mcsock, glist *gl, char *request) {
     score_str[4] = 0;
     memcpy(x_str, request+14, 3);
     x_str[3] = 0;
-    memcpy(y_str, request+14, 3);
+    memcpy(y_str, request+18, 3);
     y_str[3] = 0;
 
     int score = atoi(score_str);
