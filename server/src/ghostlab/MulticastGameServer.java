@@ -10,14 +10,15 @@ import java.io.DataOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MulticastGameServer {
   InetAddress groupeIP;
   int port;
   MulticastSocket socket;
 
-  public MulticastGameServer(InetAddress addr, String hostUDPport) throws Exception {
-    this.port = Integer.parseInt(hostUDPport);
+  public MulticastGameServer(InetAddress addr) throws Exception {
+    this.port = ThreadLocalRandom.current().nextInt(10000, 100000);
     this.groupeIP = addr;
 
     socket = new MulticastSocket(this.port);
