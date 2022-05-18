@@ -42,7 +42,7 @@ public class GameServer {
     String newIP = String.format("224.255.0.%d", id);
     try {
       this.hostMulticastAddress = InetAddress.getByName(newIP);
-      this.multicast = new MulticastGameServer(this.hostMulticastAddress, hostUDPport);
+      this.multicast = new MulticastGameServer(this.hostMulticastAddress);
 
     } catch (Exception e) {
       Logger.log("Couldn't get new multicast address for game %d", id);
@@ -94,10 +94,6 @@ public class GameServer {
       } catch (Exception e) {
         e.printStackTrace();
       }
-    }
-
-    public void propagateMessage(String from, String mess) {
-      String content = String.format("MESSP %s %s+++", from, mess);
     }
 
     private void handleRequests() throws IOException {
