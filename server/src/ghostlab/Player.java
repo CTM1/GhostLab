@@ -1,5 +1,8 @@
 package ghostlab;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -23,6 +26,20 @@ public class Player {
 
     InetSocketAddress addr = (InetSocketAddress) TCPSocket.getRemoteSocketAddress();
     this.playerIP = addr.getAddress().toString();
+  }
+
+  public void propagateMessage(String from, String mess) {
+    try {
+      byte[] content = String.format("MESSP %s %s+++", from, mess).getBytes();
+      DatagramSocket socket = new DatagramSocket();
+      InetAddress a = this.TCPSocket.getInetAddress();
+
+      DatagramPacket p = new DatagramPacket(content, content.length, a, this.UDPport);
+      socket.send(p);
+      socket.close();
+    } catch (Exception e) {
+      Logger.verbose("AAAAAAA");
+    }
   }
 
   public String getPlayerID() {
