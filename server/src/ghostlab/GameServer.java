@@ -171,11 +171,12 @@ public class GameServer {
         } catch (Exception e) {
           Logger.log("%d : Invalid message from player %s", daddy.getGameId(), playa.getPlayerID());
           e.printStackTrace();
+          return;
         }
       }
     }
 
-    private void testMoveAndSendBackMOVEF(int direction, int distance) {
+    private synchronized void testMoveAndSendBackMOVEF(int direction, int distance) {
       ArrayList<Ghost> realMFGs = daddy.getGhosts();
       boolean[][] maze = daddy.labyrinth.getSurface();
 
@@ -208,6 +209,7 @@ public class GameServer {
 
         moved++;
         // check for ghosts
+        ArrayList<Ghost> toRemove = new ArrayList<Ghost>();
         for (Ghost g : realMFGs) {
           if (position[0] == g.getX() && position[1] == g.getY()) {
             // break the move
@@ -230,8 +232,12 @@ public class GameServer {
             }
 
             // remove ghost
-            realMFGs.remove(g);
+            Logger.log("Caught a ghost!");
+            toRemove.add(g);
           }
+        }
+        for (Ghost g : toRemove) {
+          realMFGs.remove(g);
         }
       }
 
