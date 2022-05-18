@@ -217,7 +217,7 @@ public class GameServer {
 
             // update the lobby order to be highest first
             Collections.sort(
-                daddy.lobby, (p1, p2) -> ((Integer) p1.getScore()).compareTo(p2.getScore()));
+                daddy.lobby, (p1, p2) -> ((Integer) p2.getScore()).compareTo(p1.getScore()));
 
             // update emit score
             playa.addToScore(1);
