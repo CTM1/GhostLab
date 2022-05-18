@@ -266,11 +266,11 @@ int handle_posit(int sock, position_score *pos) {
     if (recv_n_bytes(sock, msg, 6) < 0)
         return -1;
     if (!strncmp(msg, "POSIT ", 6)) {
-        fprintf(stderr, "GOT POSIT\n");
+        // fprintf(stderr, "GOT POSIT\n");
         if (recv_n_bytes(sock, msg+6, 19) < 0)
             return -1;
         fill_pos_from_payload(msg, pos, 15, 19);
-        fprintf(stderr, "x=%d, y=%d\n", pos->x, pos->y);
+        // fprintf(stderr, "x=%d, y=%d\n", pos->x, pos->y);
         return 0;
     }
     return 1;
