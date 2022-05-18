@@ -2,7 +2,7 @@ package ghostlab;
 
 import java.io.PrintStream;
 
-class Logger {
+public class Logger {
 	private static PrintStream output = System.err;
 	private static boolean verbose = false;
 
