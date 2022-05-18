@@ -88,8 +88,10 @@ void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port
     mvwprintw(gmw->buttonswindow, 6, 2, "Port   : ");
     wmove(gmw->buttonswindow, 5, 11);
     wgetstr(gmw->buttonswindow, username);
+    username[8] = 0;
     wmove(gmw->buttonswindow, 6, 11);
     wgetstr(gmw->buttonswindow, port);
+    port[4] = 0;
     noecho();
     curs_set(0);
 }
@@ -175,7 +177,7 @@ void gamelist(int sock, char *ip, char *port) {
                         gameId = (uint8_t)response[6];
                         erase();
                         refresh();
-                        lobby(sock, ip, port, gameId, username);
+                        lobby(sock, ip, port, gameId, username, atoi(udpport));
                         gmw = draw_gamelist_windows(row, col, ip, port);
                         send_games(sock);
                         nbGames = handle_games(sock);
@@ -218,7 +220,7 @@ void gamelist(int sock, char *ip, char *port) {
                             gameId = (uint8_t)response[6];
                             erase();
                             refresh();
-                            lobby(sock, ip, port, gameId, username);
+                            lobby(sock, ip, port, gameId, username, atoi(udpport));
                             gmw = draw_gamelist_windows(row, col, ip, port);
                             send_games(sock);
                             nbGames = handle_games(sock);
