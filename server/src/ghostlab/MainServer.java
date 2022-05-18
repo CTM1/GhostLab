@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainServer {
   static final int MAXGAMES = 256;
@@ -220,7 +221,16 @@ public class MainServer {
               MainServer.gameServers[currentLobby].addPlayerReady();
               MainServer.gameServers[currentLobby].startTheGameIfAllReady();
 	      // wait the game out
-              while (!MainServer.gameServers[currentLobby].isOver()) {}
+              while (!MainServer.gameServers[currentLobby].isOver())
+              {
+                
+              }
+
+              HashMap<Socket, Boolean> hs = MainServer.gameServers[currentLobby].getEndedPeacefully();
+              //Close client connection
+              if (!hs.get(client)) {
+                return;  
+              }
             }
           default:
             throw new InvalidRequestException("Bad request: " + request);
