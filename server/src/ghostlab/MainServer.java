@@ -227,6 +227,7 @@ public class MainServer {
         }
       } catch (Exception e) {
         Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
+        e.printStackTrace();
         failed.send(os);
         client.close();
         Logger.log("Drop kicked them into space.\n\n");
