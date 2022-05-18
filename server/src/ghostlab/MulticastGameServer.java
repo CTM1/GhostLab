@@ -55,7 +55,7 @@ public class MulticastGameServer {
 
   public void MESSA(String id, String mess) {
     try {
-      emit(String.format("MESSA %08d %s+++", id, mess));
+      emit(String.format("MESSA %s %s+++", id, mess));
     } catch (Exception e) {
       Logger.log("NTM");
     }

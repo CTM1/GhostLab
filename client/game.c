@@ -10,8 +10,13 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "includes/protocol.h"
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+char **ghostsAndPlayers;
 
 typedef struct {
     WINDOW *topwindow;
@@ -20,6 +25,17 @@ typedef struct {
     WINDOW *chatwindow;
     WINDOW *inputwindow;
 } game_windows;
+
+typedef struct {
+    int socket;
+    char *playerName;
+    game_windows *gmw;
+    welcome *welco;
+    int **lab;
+    int gwsizex;
+    int gwsizey;
+    position_score *pos;
+} playerRefreshThreadArgs;
 
 void draw_empty_game_window(int row, int col, game_windows *gw) {
     WINDOW *w = newwin(row-4-4, (2*col)/3, 4, 0);
@@ -86,9 +102,12 @@ char ** get_game_view(int **labyrinth, int labwidth, int labheight, int gwsizex,
             // printw("%d %d || ", evalx, evaly);
             if (evalx == posx && evaly == posy) {
                 ret[cj][ci] = '@';
+            } else if (evalx > 0 && evaly > 0 && evalx < labwidth && evaly < labheight && ghostsAndPlayers[evaly][evalx] != 0) {
+                ret[cj][ci] = ghostsAndPlayers[evaly][evalx];
             } else {
-                if (evalx < 0 || evaly < 0 || evalx >= labwidth || evaly >= labheight || labyrinth[evaly][evalx])
+                if (evalx < 0 || evaly < 0 || evalx >= labwidth || evaly >= labheight || labyrinth[evaly][evalx]) {
                     ret[cj][ci] = ' ';
+                }  
                 else
                     ret[cj][ci] = '#';
             }
@@ -118,7 +137,7 @@ void refresh_lab_view(int **lab, game_windows *gw, welcome *welco, position_scor
 
 //WARNING : ONLY WORKS FOR 1 LENGTH MOVEMENTS FOR NOW
 void refresh_lab_from_movement(int **lab, position_score *pos, position_score *prevpos, int movdir) {
-    fprintf(stderr, "Prev (%d, %d)\nNew (%d, %d)\nMove %d\n\n", prevpos->x, prevpos->y, pos->x, pos->y, movdir);
+    // fprintf(stderr, "Prev (%d, %d)\nNew (%d, %d)\nMove %d\n\n", prevpos->x, prevpos->y, pos->x, pos->y, movdir);
     if (prevpos->x == pos->x && prevpos->y == pos->y) {
         switch (movdir) {
             case 0: //LEFT
@@ -138,13 +157,53 @@ void refresh_lab_from_movement(int **lab, position_score *pos, position_score *p
 }
 
 void do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos) {
+    pthread_mutex_lock(&lock);
     sendmov(sock, movetype, 1);
     memcpy(prevpos, pos, sizeof(position_score));
     get_move_response(sock, pos);
+    pthread_mutex_unlock(&lock);
     refresh_lab_from_movement(lab, pos, prevpos, movedir);
 }
 
-void maingame(int sock, char *connip, char *connport, welcome *welco) {
+void clear_ghosts_and_players(welcome *welco) {
+    for (int i=0; i<welco->height; i++) {
+        ghostsAndPlayers[i] = malloc(welco->width * sizeof(char));
+        for(int j=0; j<welco->width; j++) {
+            ghostsAndPlayers[i][j] = 0;
+        }
+    }
+}
+
+
+//THREAD FUNCTION
+void *player_refresh(void *arg) {
+    playerRefreshThreadArgs *prta;
+    prta = (playerRefreshThreadArgs*)arg;
+    glist *gl = malloc(sizeof(glist));
+    while(1) {
+        pthread_mutex_lock(&lock);
+        clear_ghosts_and_players(prta->welco);
+        get_glist(prta->socket, gl);
+        for(int i=0; i<gl->nplayers; i++) {    
+            int x = gl->pos_scores[i]->x;
+            int y = gl->pos_scores[i]->y;
+            int score = gl->pos_scores[i]->score;
+            if (strncmp(gl->usernames[i], prta->playerName, 8))
+                ghostsAndPlayers[y][x] = gl->usernames[i][0];
+            else
+                wattron(prta->gmw->playerlistwindow, A_BOLD);
+            mvwprintw(prta->gmw->playerlistwindow, 1+i, 1, "%s (%d,%d) : %d  ",
+            gl->usernames[i], x, y, score);
+            wattroff(prta->gmw->playerlistwindow, A_BOLD);
+            wrefresh(prta->gmw->playerlistwindow);
+        }
+        refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
+        pthread_mutex_unlock(&lock);
+        usleep(500000);
+    }
+}
+
+void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname) {
     int row, col;
     getmaxyx(stdscr, row, col);
     int gwsizex = (2*col)/3-2;
@@ -158,19 +217,34 @@ void maingame(int sock, char *connip, char *connport, welcome *welco) {
         }
     }
 
+    ghostsAndPlayers = malloc(welco->height * sizeof(char*));
+    clear_ghosts_and_players(welco);
+
     position_score *prevpos = malloc(sizeof(position_score));
     position_score *pos = malloc(sizeof(position_score));
+    pthread_mutex_lock(&lock);
     int r = handle_posit(sock, pos);
+    pthread_mutex_unlock(&lock);
     
 
     game_windows *gw = draw_game_windows(row, col, connip, connport, welco->gameId);
 
-    mvwprintw(gw->chatwindow, 1, 1, "POSIT RES %d", r);
-    wrefresh(gw->chatwindow);
+    pthread_t player_refresh_thread;
+    playerRefreshThreadArgs *prta = malloc(sizeof(playerRefreshThreadArgs));
+    prta->socket = sock;
+    prta->gmw = gw;
+    prta->playerName = plname;
+    prta->welco = welco;
+    prta->lab = lab;
+    prta->gwsizex = gwsizex;
+    prta->gwsizey = gwsizey;
+    prta->pos = pos;
+    r = pthread_create(&player_refresh_thread, NULL, player_refresh, (void*)prta);
+    if (r != 0) {
+        return;
+    }
 
     refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
-
-
 
     while(true) {
         int key = getch();

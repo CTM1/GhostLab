@@ -175,7 +175,7 @@ void gamelist(int sock, char *ip, char *port) {
                         gameId = (uint8_t)response[6];
                         erase();
                         refresh();
-                        lobby(sock, ip, port, gameId);
+                        lobby(sock, ip, port, gameId, username);
                         gmw = draw_gamelist_windows(row, col, ip, port);
                         send_games(sock);
                         nbGames = handle_games(sock);
@@ -218,7 +218,7 @@ void gamelist(int sock, char *ip, char *port) {
                             gameId = (uint8_t)response[6];
                             erase();
                             refresh();
-                            lobby(sock, ip, port, gameId);
+                            lobby(sock, ip, port, gameId, username);
                             gmw = draw_gamelist_windows(row, col, ip, port);
                             send_games(sock);
                             nbGames = handle_games(sock);

@@ -159,11 +159,11 @@ public class GameServer {
 
               daddy.multicast.MESSA(playa.getPlayerID(), new String(buff));
 
-              outStream.write("MALL!".getBytes());
+              outStream.write("MALL!***".getBytes());
               outStream.flush();
               break;
             default:
-              outStream.write("GOBYE!".getBytes());
+              outStream.write("GOBYE!***".getBytes());
               outStream.flush();
               endedPeacefully.put(playa.getTCPSocket(), false);
               return;
