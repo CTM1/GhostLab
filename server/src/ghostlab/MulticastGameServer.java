@@ -18,7 +18,7 @@ public class MulticastGameServer {
   MulticastSocket socket;
 
   public MulticastGameServer(InetAddress addr) throws Exception {
-    this.port = ThreadLocalRandom.current().nextInt(10000, 100000);
+    this.port = ThreadLocalRandom.current().nextInt(1000, 9999);
     this.groupeIP = addr;
 
     socket = new MulticastSocket(this.port);
@@ -39,7 +39,7 @@ public class MulticastGameServer {
     socket.send(message);
   }
 
-  public void GHOST(int x, int y) {
+  public synchronized void GHOST(int x, int y) {
     try {
       emit(String.format("GHOST %03d %03d+++", x, y));
     } catch (Exception e) {
@@ -47,7 +47,7 @@ public class MulticastGameServer {
     }
   }
 
-  public void SCORE(String id, int p, int x, int y) {
+  public synchronized void SCORE(String id, int p, int x, int y) {
     try {
       emit(String.format("SCORE %s %04d %03d %03d+++", id, p, x, y));
     } catch (Exception e) {
@@ -55,7 +55,7 @@ public class MulticastGameServer {
     }
   }
 
-  public void MESSA(String id, String mess) {
+  public synchronized void MESSA(String id, String mess) {
     try {
       emit(String.format("MESSA %s %s+++", id, mess));
     } catch (Exception e) {
@@ -63,11 +63,15 @@ public class MulticastGameServer {
     }
   }
 
-  public void ENDGA(String id, int p) {
+  public synchronized void ENDGA(String id, int p) {
     try {
       emit(String.format("ENDGA %s %04d+++", id, p));
     } catch (Exception e) {
       Logger.log("NTM");
     }
+  }
+
+  public int getPort() {
+    return this.port;
   }
 }

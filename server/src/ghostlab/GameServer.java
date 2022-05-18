@@ -159,12 +159,18 @@ public class GameServer {
               br.read(); // espace
               char[] buff = new char[200];
               int read = 0;
-              while (buff[read] != '*' && read < 200) {
-                buff[read] = (char) br.read();
+              while (read <= 200) {
+                char c = (char) br.read();
+                if (c == '*') {
+                  br.read();
+                  br.read();
+                  break;
+                }
+                buff[read] = c;
                 read++;
               }
-
-              daddy.multicast.MESSA(playa.getPlayerID(), new String(buff));
+              Logger.log("Sending "+new String(buff)+ " from "+ playa.getPlayerID());
+              daddy.multicast.MESSA(playa.getPlayerID(), new String(buff, 0, read));
 
               outStream.write("MALL!***".getBytes());
               outStream.flush();
@@ -275,7 +281,7 @@ public class GameServer {
               labyrinth.getWidth(),
               (byte) ghosts.size(),
               hostMulticastAddress.toString(),
-              hostUDPport);
+              Integer.toString(multicast.getPort()));
 
       for (Player p : lobby) {
         try {
