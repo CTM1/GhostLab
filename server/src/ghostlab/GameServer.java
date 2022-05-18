@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class GameServer {
   private byte id;
@@ -42,7 +43,21 @@ public class GameServer {
     String newIP = String.format("224.255.0.%d", id);
     try {
       this.hostMulticastAddress = InetAddress.getByName(newIP);
-      this.multicast = new MulticastGameServer(this.hostMulticastAddress);
+
+      // find port
+      boolean foundPort = false;
+      int udpPort;
+      do {
+        udpPort = ThreadLocalRandom.current().nextInt(1000, 10000);
+        foundPort = true;
+
+        for (Player p : lobby) {
+          if (p.getUDPport() == udpPort) foundPort = false;
+        }
+
+      } while (!foundPort);
+
+      this.multicast = new MulticastGameServer(this.hostMulticastAddress, udpPort);
 
     } catch (Exception e) {
       Logger.log("Couldn't get new multicast address for game %d", id);
@@ -169,7 +184,7 @@ public class GameServer {
                 buff[read] = c;
                 read++;
               }
-              Logger.log("Sending "+new String(buff)+ " from "+ playa.getPlayerID());
+              Logger.log("Sending " + new String(buff) + " from " + playa.getPlayerID());
               daddy.multicast.MESSA(playa.getPlayerID(), new String(buff, 0, read));
 
               outStream.write("MALL!***".getBytes());

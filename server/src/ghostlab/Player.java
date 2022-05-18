@@ -67,6 +67,10 @@ public class Player {
     return y;
   }
 
+  public int getUDPport() {
+    return this.UDPport;
+  }
+
   public Socket getTCPSocket() {
     return this.TCPSocket;
   }
