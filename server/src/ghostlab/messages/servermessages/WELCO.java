@@ -40,7 +40,7 @@ public class WELCO implements ServerMessage {
 
     os.write(f);
     os.write(" ".getBytes());
-    os.write(ip.getBytes());
+    os.write(ip.substring(1, ip.length()).getBytes());
     os.write(" ".getBytes());
     os.write(port.getBytes());
     os.write("***".getBytes());

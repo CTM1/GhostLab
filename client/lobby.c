@@ -66,7 +66,7 @@ void refreshPlayerList(lobby_windows *lbw, int socket, uint8_t gameId) {
     }
 }
 
-void lobby(int socket, char *connip, char *connport, uint8_t gameId, char *plname) {
+void lobby(int socket, char *connip, char *connport, uint8_t gameId, char *plname, int port) {
     int row, col;
     getmaxyx(stdscr, row, col);
     
@@ -113,7 +113,7 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId, char *plnam
                             // w.gameId, w.height, w.width, w.nbGhosts, w.ip, w.port);
                             erase();
                             refresh();
-                            maingame(socket, connip, connport, &w, plname);
+                            maingame(socket, connip, connport, &w, plname, port);
                         }
                         wrefresh(lbw->lobbywindow);
                         break;
