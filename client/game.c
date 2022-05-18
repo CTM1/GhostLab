@@ -11,12 +11,15 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
+#include <fcntl.h>
 
 #include "includes/protocol.h"
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
-char **ghostsAndPlayers;
+char **player_grid;
+char **ghost_grid;
+int gameOver = 0;
 
 typedef struct {
     WINDOW *topwindow;
@@ -35,7 +38,15 @@ typedef struct {
     int gwsizex;
     int gwsizey;
     position_score *pos;
+    glist *gl;
 } playerRefreshThreadArgs;
+
+typedef struct {
+    char hint_char;
+    int x;
+    int y;
+    int timeout;
+} hint_thread_args;
 
 void draw_empty_game_window(int row, int col, game_windows *gw) {
     WINDOW *w = newwin(row-4-4, (2*col)/3, 4, 0);
@@ -96,20 +107,21 @@ char ** get_game_view(int **labyrinth, int labwidth, int labheight, int gwsizex,
     int cj = 0;
     for(int y=0; y<gwsizey; y++) {
         for (int x=0; x<gwsizex; x++) {
-            // refresh();
             int evalx = posx-gwcenterx+x;
             int evaly = posy-gwcentery+y;
-            // printw("%d %d || ", evalx, evaly);
             if (evalx == posx && evaly == posy) {
                 ret[cj][ci] = '@';
-            } else if (evalx > 0 && evaly > 0 && evalx < labwidth && evaly < labheight && ghostsAndPlayers[evaly][evalx] != 0) {
-                ret[cj][ci] = ghostsAndPlayers[evaly][evalx];
-            } else {
-                if (evalx < 0 || evaly < 0 || evalx >= labwidth || evaly >= labheight || labyrinth[evaly][evalx]) {
+            } else if (evalx >= 0 && evaly >= 0 && evalx < labwidth && evaly < labheight ) {
+                if (player_grid[evaly][evalx] != 0) 
+                    ret[cj][ci] = player_grid[evaly][evalx];
+                else if (ghost_grid[evaly][evalx] != 0) 
+                    ret[cj][ci] = ghost_grid[evaly][evalx];
+                else if (labyrinth[evaly][evalx])
                     ret[cj][ci] = ' ';
-                }  
                 else
                     ret[cj][ci] = '#';
+            } else {
+                ret[cj][ci] = ' ';
             }
             ci++;
         }
@@ -165,35 +177,33 @@ void do_move(int sock, char *movetype, int movedir, int **lab, position_score *p
     refresh_lab_from_movement(lab, pos, prevpos, movedir);
 }
 
-void clear_ghosts_and_players(welcome *welco) {
+void clear_player_grid(welcome *welco) {
     for (int i=0; i<welco->height; i++) {
-        ghostsAndPlayers[i] = malloc(welco->width * sizeof(char));
+        player_grid[i] = malloc(welco->width * sizeof(char));
         for(int j=0; j<welco->width; j++) {
-            ghostsAndPlayers[i][j] = 0;
+            player_grid[i][j] = 0;
         }
     }
 }
-
 
 //THREAD FUNCTION
 void *player_refresh(void *arg) {
     playerRefreshThreadArgs *prta;
     prta = (playerRefreshThreadArgs*)arg;
-    glist *gl = malloc(sizeof(glist));
     while(1) {
         pthread_mutex_lock(&lock);
-        clear_ghosts_and_players(prta->welco);
-        get_glist(prta->socket, gl);
-        for(int i=0; i<gl->nplayers; i++) {    
-            int x = gl->pos_scores[i]->x;
-            int y = gl->pos_scores[i]->y;
-            int score = gl->pos_scores[i]->score;
-            if (strncmp(gl->usernames[i], prta->playerName, 8))
-                ghostsAndPlayers[y][x] = gl->usernames[i][0];
+        clear_player_grid(prta->welco);
+        get_glist(prta->socket, prta->gl);
+        for(int i=0; i<prta->gl->nplayers; i++) {    
+            int x = prta->gl->pos_scores[i]->x;
+            int y = prta->gl->pos_scores[i]->y;
+            int score = prta->gl->pos_scores[i]->score;
+            if (strncmp(prta->gl->usernames[i], prta->playerName, 8))
+                player_grid[y][x] = prta->gl->usernames[i][0];
             else
                 wattron(prta->gmw->playerlistwindow, A_BOLD);
             mvwprintw(prta->gmw->playerlistwindow, 1+i, 1, "%s (%d,%d) : %d  ",
-            gl->usernames[i], x, y, score);
+            prta->gl->usernames[i], x, y, score);
             wattroff(prta->gmw->playerlistwindow, A_BOLD);
             wrefresh(prta->gmw->playerlistwindow);
         }
@@ -203,11 +213,126 @@ void *player_refresh(void *arg) {
     }
 }
 
-void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname) {
+//THREAD FUNCTION
+void *hint(void *arg) {
+    hint_thread_args *hta;
+    hta = (hint_thread_args *)arg;
+
+    pthread_mutex_lock(&lock);
+    ghost_grid[hta->y][hta->x] = hta->hint_char;
+    pthread_mutex_unlock(&lock);
+    sleep(hta->timeout);
+    pthread_mutex_lock(&lock);
+    if (ghost_grid[hta->y][hta->x] == hta->hint_char)
+        ghost_grid[hta->y][hta->x] = 0;
+    pthread_mutex_unlock(&lock);
+    free(hta);
+    return NULL;
+}
+
+void handle_ghost(int mcsock, char *request) {
+    char x_str[4];
+    char y_str[4];
+    char tail[3];
+    memcpy(x_str, request, 3);
+    x_str[3] = 0;
+    memcpy(y_str, request+4, 3);
+    y_str[3] = 0;
+
+    int x = atoi(x_str);
+    int y = atoi(y_str);
+    
+    pthread_t *t = malloc(sizeof(pthread_t));
+    hint_thread_args *hta = malloc(sizeof(hint_thread_args));
+    hta->hint_char = '?';
+    hta->x = x;
+    hta->y = y;
+    hta->timeout = 5;
+    pthread_create(t, NULL, hint, (void*)hta);
+    // fprintf(stderr, "> GHOST %s %s+++\n", x_str, y_str);
+}
+
+void handle_score(int mcsock, glist *gl, char *request) {
+    char player_id[9];
+    char score_str[5];
+    char x_str[4];
+    char y_str[4];
+    memcpy(player_id, request, 8);
+    player_id[8] = 0;
+    memcpy(score_str, request+9, 4);
+    score_str[4] = 0;
+    memcpy(x_str, request+14, 3);
+    x_str[3] = 0;
+    memcpy(y_str, request+14, 3);
+    y_str[3] = 0;
+
+    int score = atoi(score_str);
+    int x = atoi(x_str);
+    int y = atoi(y_str);
+
+    pthread_t *t = malloc(sizeof(pthread_t));
+    hint_thread_args *hta = malloc(sizeof(hint_thread_args));
+    hta->hint_char = '!';
+    hta->x = x;
+    hta->y = y;
+    hta->timeout = 3;
+    pthread_create(t, NULL, hint, (void*)hta);
+    // fprintf(stderr, "> SCORE %s %s %s %s+++\n", player_id, score_str, x_str, y_str);
+}
+
+void handle_multicast_requests(int mcsock, glist *gl) {
+    char request[256];
+    int r = recv(mcsock, request, 256, 0);
+    if (r > 0) {
+        request[255] = 0;
+        if (!strncmp(request, "GHOST ", 6)) {
+            handle_ghost(mcsock, request+6);
+        } else if (!strncmp(request, "SCORE ", 6)) {
+            handle_score(mcsock, gl, request+6);
+        } else if (!strncmp(request, "MESSA", 6)) {
+
+        } else if (!strncmp(request, "ENDGA", 6)) {
+            
+        }
+    }
+}
+
+void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname, int port) {
     int row, col;
     getmaxyx(stdscr, row, col);
     int gwsizex = (2*col)/3-2;
     int gwsizey = row-4-4;
+    int r;
+
+    int mcsocket = socket(PF_INET, SOCK_DGRAM, 0);
+    // int udpsocket = socket(AF_INET, SOCK_DGRAM, 0);
+
+    fcntl(mcsocket, F_SETFL, O_NONBLOCK);
+    // fcntl(udpsocket, F_SETFL, O_NONBLOCK);
+
+    struct sockaddr_in mcaddr;
+    memset(&mcaddr, 0, sizeof(mcaddr));
+    mcaddr.sin_family = AF_INET;
+    mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    mcaddr.sin_port = htons(welco->port);
+
+    // struct sockaddr_in udpaddr;
+    // memset(&udpaddr, 0, sizeof(udpaddr));
+    // udpaddr.sin_family = AF_INET;
+    // mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    // udpaddr.sin_port = htons(port);
+
+    const int trueFlag = 1;
+    setsockopt(mcsocket, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
+
+    r = bind(mcsocket, (struct sockaddr*) &mcaddr, sizeof(mcaddr));
+    // fprintf(stderr, "[*] Bind multicast socket, r=%d (%d)\n", r, errno);
+    // r = bind(udpsocket, (struct sockaddr*) &udpaddr, sizeof(udpaddr));
+
+    struct ip_mreq mreq;
+    inet_pton(AF_INET, welco->ip, &mreq.imr_multiaddr.s_addr);
+    mreq.imr_interface.s_addr=htonl(INADDR_ANY);
+    r=setsockopt(mcsocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
 
     int **lab = malloc(welco->height * sizeof(int*));
     for (int i=0; i<welco->height; i++) {
@@ -217,17 +342,28 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         }
     }
 
-    ghostsAndPlayers = malloc(welco->height * sizeof(char*));
-    clear_ghosts_and_players(welco);
+    player_grid = malloc(welco->height * sizeof(char*));
+    clear_player_grid(welco);
+
+    ghost_grid = malloc(welco->height * sizeof(char*));
+    for (int i=0; i<welco->height; i++) {
+        ghost_grid[i] = malloc(welco->width * sizeof(char));
+        for(int j=0; j<welco->width; j++) {
+            ghost_grid[i][j] = 0;
+        }
+    }
+
 
     position_score *prevpos = malloc(sizeof(position_score));
     position_score *pos = malloc(sizeof(position_score));
     pthread_mutex_lock(&lock);
-    int r = handle_posit(sock, pos);
+    r = handle_posit(sock, pos);
     pthread_mutex_unlock(&lock);
     
 
     game_windows *gw = draw_game_windows(row, col, connip, connport, welco->gameId);
+
+    glist *gl = malloc(sizeof(glist));
 
     pthread_t player_refresh_thread;
     playerRefreshThreadArgs *prta = malloc(sizeof(playerRefreshThreadArgs));
@@ -239,6 +375,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     prta->gwsizex = gwsizex;
     prta->gwsizey = gwsizey;
     prta->pos = pos;
+    prta->gl = gl;
     r = pthread_create(&player_refresh_thread, NULL, player_refresh, (void*)prta);
     if (r != 0) {
         return;
@@ -246,7 +383,12 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
 
     refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
 
+    char tmpbuf[5];
+
+    timeout(500);
+
     while(true) {
+        handle_multicast_requests(mcsocket, gl);
         int key = getch();
         switch (key) {
             case KEY_LEFT:
