@@ -6,18 +6,20 @@ import java.io.OutputStream;
 import ghostlab.Player;
 
 public class GLIS implements ServerMessage {
-    private int nbOfPlayers;
+    private byte nbOfPlayers;
 
     public GLIS(int nbOfPlayers) {
-        this.nbOfPlayers = nbOfPlayers;
+        this.nbOfPlayers = (byte)nbOfPlayers;
     }
 
     public String toString() {
-        return String.format("GLIS! %d***", nbOfPlayers);
+        return String.format("GLIS! %d***", Byte.toUnsignedInt(nbOfPlayers));
     }
 
     public void send(OutputStream os) throws IOException {
-        os.write(this.toString().getBytes());
+        os.write("GLIS! ".getBytes());
+        os.write(nbOfPlayers);
+        os.write("***".getBytes());
         os.flush();
     }
 }
