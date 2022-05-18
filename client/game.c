@@ -280,21 +280,47 @@ void handle_score(int mcsock, glist *gl, char *request) {
     // fprintf(stderr, "> SCORE %s %s %s %s+++\n", player_id, score_str, x_str, y_str);
 }
 
-void handle_multicast_requests(int mcsock, glist *gl) {
+void handle_messa(int mcsock, char *request, game_windows *gmw) {
+    fprintf(stderr, "GOT MESSA\n");
+    char player_id[9];
+    memcpy(player_id, request, 8);
+    player_id[8] = 0;
+    wprintw(gmw->chatwindow, "[%s] ", player_id);
+    wrefresh(gmw->chatwindow);
+    int c = 9;
+    do {
+        wprintw(gmw->chatwindow, "%c", request[c]);
+        c++;
+    } while (c >=200 || !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
+    wprintw(gmw->chatwindow, "\n");
+    wrefresh(gmw->chatwindow);
+}
+
+void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
     char request[256];
     int r = recv(mcsock, request, 256, 0);
     if (r > 0) {
         request[255] = 0;
+        fprintf(stderr, "%s\n", request);
         if (!strncmp(request, "GHOST ", 6)) {
             handle_ghost(mcsock, request+6);
         } else if (!strncmp(request, "SCORE ", 6)) {
             handle_score(mcsock, gl, request+6);
-        } else if (!strncmp(request, "MESSA", 6)) {
-
-        } else if (!strncmp(request, "ENDGA", 6)) {
-            
+        } else if (!strncmp(request, "MESSA ", 6)) {
+            handle_messa(mcsock, request+6, gmw);
+        } else if (!strncmp(request, "ENDGA ", 6)) {
+            gameOver = 1;
         }
     }
+}
+
+void reset_input_window(game_windows *gw, int col) {
+    wclear(gw->inputwindow);
+    box(gw->inputwindow, 0, 0);
+    mvwaddch(gw->inputwindow, 4, (2*col/3)-1, ACS_LTEE);
+    mvwaddch(gw->inputwindow, 0, 0, ACS_RTEE);
+    mvwaddch(gw->inputwindow, 0, (2*col/3)-1, ACS_RTEE);
+    wrefresh(gw->inputwindow);
 }
 
 void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname, int port) {
@@ -388,7 +414,9 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     timeout(500);
 
     while(true) {
-        handle_multicast_requests(mcsocket, gl);
+        handle_multicast_requests(mcsocket, gl, gw);
+        if (gameOver)
+            return;
         int key = getch();
         switch (key) {
             case KEY_LEFT:
@@ -402,6 +430,28 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 break;
             case KEY_DOWN:
                 do_move(sock, "DOMOV", 3, lab, pos, prevpos);
+                break;
+        }
+        switch ((char)key) {
+            case 'm':
+                wmove(gw->inputwindow, 1, 1);
+                echo();
+                curs_set(1);
+                char msg[201];
+                wprintw(gw->inputwindow, "chat> ");
+                wrefresh(gw->inputwindow);
+                wgetnstr(gw->inputwindow, msg, 200);
+                msg[200] = 0;
+                pthread_mutex_lock(&lock);
+                send_mall(sock, msg, strlen(msg));
+                pthread_mutex_unlock(&lock);
+                curs_set(0);
+                noecho();
+                reset_input_window(gw, col);
+                break;
+            case 'p':
+                break;
+            case 'e':
                 break;
         }
         refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
