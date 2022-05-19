@@ -219,10 +219,7 @@ public class MainServer {
               MainServer.gameServers[currentLobby].addPlayerReady();
               MainServer.gameServers[currentLobby].startTheGameIfAllReady();
 	      // wait the game out
-              while (!MainServer.gameServers[currentLobby].isOver())
-              {
-                
-              }
+              while (!MainServer.gameServers[currentLobby].isOver()) {}
 
               HashMap<Socket, Boolean> hs = MainServer.gameServers[currentLobby].getEndedPeacefully();
               //Close client connection
