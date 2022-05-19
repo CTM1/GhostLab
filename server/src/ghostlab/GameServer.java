@@ -371,6 +371,7 @@ public class GameServer {
       }
     }
     multicast.ENDGA(id, maxScore);
+    this.over = true;
   }
 
   public synchronized boolean sendMessage(String from, String to, String content) {
