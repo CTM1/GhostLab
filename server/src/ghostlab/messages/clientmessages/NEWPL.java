@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 public class NEWPL {
-    private String playerID; // 8 chars or fuck off!
-    private String port; // 4 chars or fuck off!
+    private String playerID;
+    private String port;
 
     public NEWPL(String playerID, String port) throws IOException {
         this.playerID = playerID;
