@@ -40,7 +40,13 @@ public class WELCO implements ServerMessage {
 
     os.write(f);
     os.write(" ".getBytes());
-    os.write(ip.substring(1, ip.length()).getBytes());
+    String paddedIp = ip.substring(1, ip.length());
+
+    while (paddedIp.length() < 15) {
+      paddedIp += "#";
+    }
+
+    os.write(paddedIp.getBytes());
     os.write(" ".getBytes());
     os.write(port.getBytes());
     os.write("***".getBytes());
