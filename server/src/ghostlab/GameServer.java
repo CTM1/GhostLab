@@ -36,6 +36,9 @@ public class GameServer {
     this.handlers = new HashMap<Player, PlayerHandler>();
     this.endedPeacefully = new HashMap<Socket, Boolean>();
 
+    this.endedPeacefully.put(hostTCPSocket, true);
+    Logger.log(endedPeacefully + "\n");
+
     String newIP = String.format("224.255.0.%d", id);
     int udpPort = -1;
     try {
@@ -82,12 +85,10 @@ public class GameServer {
     BufferedReader br;
     // PrintWriter pw;
 
-    public boolean con; // tinue
 
     public PlayerHandler(Player p, GameServer daddy) {
       playa = p;
       this.daddy = daddy;
-      con = true;
       try {
         inStream = playa.TCPSocket.getInputStream();
         outStream = playa.TCPSocket.getOutputStream();
@@ -109,12 +110,17 @@ public class GameServer {
     private void handleRequests() throws IOException {
       int direction;
       int distance;
-      while (con) {
+      while (!daddy.isOver()) {
         String request = "";
         try {
           for (int i = 0; i < 5; i++) {
-            request += (char) (br.read());
+            try {
+              request += (char) (br.read());
+            } catch (SocketException e) {
+              break;
+            }
           }
+
 
           switch (request) {
             case "UPMOV":
@@ -166,7 +172,7 @@ public class GameServer {
               }
 
               break;
-            case "MALL?": // TODO
+            case "MALL?":
               br.read(); // espace
               char[] buff = new char[200];
               int read = 0;
@@ -396,6 +402,7 @@ public class GameServer {
         Player p = new Player(this.lobby.size(), regis.getPlayerID(), regis.getPort(), TCPSocket);
         lobby.add(p);
         this.endedPeacefully.put(p.getTCPSocket(), true);
+        Logger.log("AAA "+endedPeacefully+"\n");
       } catch (SocketException e) {
         System.out.println(
             "Failed to register "

@@ -208,7 +208,10 @@ void *player_refresh(void *arg) {
     while(1) {
         pthread_mutex_lock(&lock);
         clear_player_grid(prta->welco);
-        get_glist(prta->socket, prta->gl);
+        int r = get_glist(prta->socket, prta->gl);
+        if (r != 0)
+            break;
+            
         for(int i=0; i<prta->gl->nplayers; i++) {    
             int x = prta->gl->pos_scores[i]->x;
             int y = prta->gl->pos_scores[i]->y;
@@ -227,7 +230,11 @@ void *player_refresh(void *arg) {
         refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
         pthread_mutex_unlock(&lock);
         usleep(500000);
+        if(gameOver) {
+            break;
+        }
     }
+    return NULL;
 }
 
 //THREAD FUNCTION
@@ -328,9 +335,11 @@ void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
         } else if (!strncmp(request, "MESSA ", 6)) {
             handle_messa(mcsock, request+6, gmw);
         } else if (!strncmp(request, "ENDGA ", 6)) {
+            pthread_mutex_lock(&lock);
             gameOver = 1;
         }
     }
+    free(request);
 }
 
 void handle_udp_requests(int udpsock, game_windows *gmw) {
@@ -448,8 +457,33 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     while(true) {
         handle_multicast_requests(mcsocket, gl, gw);
         handle_udp_requests(udpsocket, gw);
-        if (gameOver)
+        if (gameOver) {
+            clear();
+            refresh();
+            pthread_cancel(player_refresh_thread);
+            free(prta);
+            free(gl->pos_scores);
+            free(gl->usernames);
+            free(gl);
+            delwin(gw->chatwindow);
+            delwin(gw->gamewindow);
+            delwin(gw->inputwindow);
+            delwin(gw->playerlistwindow);
+            free(gw);
+            for (int i=0; i<welco->height; i++) {
+                free(lab[i]);
+                free(player_grid[i]);
+                free(ghost_grid[i]);
+            }
+            free(lab);
+            free(player_grid);
+            free(ghost_grid);
+            free(pos);
+            free(prevpos);
             return;
+        }
+            
+            
         int key = getch();
         switch (key) {
             case KEY_LEFT:
@@ -514,5 +548,6 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 break;
         }
         refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
-    } 
+    }
+
 }

@@ -102,7 +102,7 @@ public class MainServer {
       throws IOException {
     byte currentLobby = 0;
     String currPlayerID = "";
-    REGNO failed = new REGNO();
+    REGNO regno = new REGNO();
     DUNNO dunno = new DUNNO();
 
     // We'll read the first five characters into this, then handle the rest in
@@ -167,7 +167,7 @@ public class MainServer {
               NEWPL npl = NEWPL.parse(br);
               int id = createNewGame(npl, client);
 
-              if (id == -1) failed.send(os);
+              if (id == -1) regno.send(os);
               else {
                 REGOK replyNewPl = new REGOK((byte) id);
                 replyNewPl.send(os);
@@ -197,7 +197,7 @@ public class MainServer {
                 currentLobby = (byte) regID;
                 currPlayerID = regis.getPlayerID();
               } else {
-                failed.send(os);
+                regno.send(os);
               }
             }
             break;
@@ -219,26 +219,31 @@ public class MainServer {
             else {
               MainServer.gameServers[currentLobby].addPlayerReady();
               MainServer.gameServers[currentLobby].startTheGameIfAllReady();
-	      // wait the game out
-              while (!MainServer.gameServers[currentLobby].isOver())
-              {
-                
-              }
+	            // wait the game out
+              while (!MainServer.gameServers[currentLobby].isOver());
 
               HashMap<Socket, Boolean> hs = MainServer.gameServers[currentLobby].getEndedPeacefully();
               //Close client connection
+              Logger.log("BBBBB " + hs + "\n");
               Boolean ret = hs.get(client);
               if (ret != null && !ret) {
                 return;  
               }
             }
+            break;
+          case "GLIS?":
+            //edge case : sometimes client sends GLIS? even though game just ended.
+            //in that case, parse it here and ignore it.
+            for(int i=0; i<3; i++)
+              br.read();
+            break;
           default:
             throw new InvalidRequestException("Bad request: " + request);
         }
       } catch (Exception e) {
         Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
         e.printStackTrace();
-        failed.send(os);
+        dunno.send(os);
         client.close();
         Logger.log("Drop kicked them into space.\n\n");
         return;

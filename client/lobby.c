@@ -102,8 +102,6 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId, char *plnam
                         break;
                     case 1:
                         r = send_start(socket);
-                        wprintw(lbw->lobbywindow, "START, CODE %d\n", r);
-                        wrefresh(lbw->lobbywindow);
                         welcome w;
                         r = wait_welcome(socket, &w);
                         wprintw(lbw->lobbywindow, "WELCO, CODE %d\n", r);
@@ -114,6 +112,7 @@ void lobby(int socket, char *connip, char *connport, uint8_t gameId, char *plnam
                             erase();
                             refresh();
                             maingame(socket, connip, connport, &w, plname, port);
+                            return;
                         }
                         wrefresh(lbw->lobbywindow);
                         break;

@@ -321,6 +321,9 @@ int get_glist(int sock, glist *glist) {
     char response[10];
     if (recv_n_bytes(sock, response, 10) < 0)
         return -1;
+    fprintf(stderr, "%s\n", response);
+    if (strncmp(response, "GLIS!", 5))
+        return 2;
     uint8_t nbPlayers = (uint8_t)response[6];
     glist->nplayers = nbPlayers;
     glist->usernames = malloc(nbPlayers * sizeof(char*));
