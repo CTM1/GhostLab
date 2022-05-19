@@ -209,16 +209,15 @@ int wait_welcome(int sock, welcome *w) {
         memcpy(&w->width, msg+11, 2);
         w->nbGhosts = (uint8_t)msg[14];
 
-        int ipLength;
-        for(ipLength=0; ipLength<16; ipLength++) {
-            char recvchar;
-            if (recv_n_bytes(sock, &recvchar, 1) < 0)
-                return -1;
-            if (recvchar == ' ')
+        
+        recv_n_bytes(sock, w->ip, 16);
+
+        for (int i = 0; i < 16; i++) {
+            if (w->ip[i] == '#' || w->ip[i] == ' ') {
+                w->ip[i] = '\0';
                 break;
-            w->ip[ipLength] = recvchar;
+            }
         }
-        w->ip[ipLength] = 0;
 
         char port[5];
         if (recv_n_bytes(sock, port, 4) < 0)
@@ -230,6 +229,7 @@ int wait_welcome(int sock, welcome *w) {
         if (recv_n_bytes(sock, tail, 3) < 0)
             return -1;
 
+        printf("%s\n",tail);
         if (strncmp(tail, "***", 3))
             return 2;
         return 0;
