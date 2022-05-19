@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.Player;
 
-public class PLAYR implements ServerMessage {
+public class PLAYR extends ServerMessage {
     private String playerID;
 
     public PLAYR(Player player) {

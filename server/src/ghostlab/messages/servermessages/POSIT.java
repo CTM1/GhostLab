@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class POSIT implements ServerMessage {
+public class POSIT extends ServerMessage {
   String playerID;
   String x;
   String y;

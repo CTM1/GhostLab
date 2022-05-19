@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.Player;
 
-public class GPLYR implements ServerMessage {
+public class GPLYR extends ServerMessage {
     private Player p;
 
     public GPLYR(Player p) {

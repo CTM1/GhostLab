@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class REGOK implements ServerMessage {
+public class REGOK extends ServerMessage {
     private byte matchID;
     
     public REGOK(byte m) {

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import ghostlab.GameServer;
-public class OGAME implements ServerMessage {
+public class OGAME extends ServerMessage {
     private byte id;
     private byte nbOfPlayers;
 

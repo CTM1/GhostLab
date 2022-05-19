@@ -2,17 +2,24 @@ package ghostlab.messages.clientmessages;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 
-public class SIZEQ {
-    private byte gameID;
+import ghostlab.GameServer;
+import ghostlab.MainServer;
+import ghostlab.messages.servermessages.DUNNO;
+import ghostlab.messages.servermessages.SIZEA;
 
-    public SIZEQ(byte gId) {
+public class SIZEQ implements ClientMessage {
+    private Byte gameID;
+
+    public SIZEQ(Byte gId) {
         this.gameID = gId;
     }
 
     public static SIZEQ parse(BufferedReader br) throws IOException {
         br.read(); // the space
-        byte gID;
+        Byte gID;
 
         gID = (byte) br.read();
 
@@ -22,11 +29,26 @@ public class SIZEQ {
         return new SIZEQ(gID);
     }
 
-    public String toString() {
-        return("SIZEQ " + this.gameID + "***");
+    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
+            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws IOException {
+        DUNNO dunno = new DUNNO();
+
+        
+        Byte gIDreq = this.getGameID();
+        GameServer m = gameServers[Byte.toUnsignedInt(gIDreq)];
+        if (m == null)
+            dunno.send(os);
+        else {
+            SIZEA sizeAns = new SIZEA(m);
+            sizeAns.send(os);
+        }
     }
 
-    public byte getGameID() {
-        return(this.gameID);
+    public String toString() {
+        return ("SIZEQ " + this.gameID + "***");
+    }
+
+    public Byte getGameID() {
+        return (this.gameID);
     }
 }

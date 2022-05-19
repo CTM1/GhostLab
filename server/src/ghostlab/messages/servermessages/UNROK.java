@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class UNROK implements ServerMessage {
+public class UNROK extends ServerMessage {
     private byte matchID;
     
     public UNROK(byte m) {
