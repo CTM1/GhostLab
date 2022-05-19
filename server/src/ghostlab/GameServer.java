@@ -351,13 +351,17 @@ public class GameServer {
       // }
 
       // move a ghost around every 3 second
-      timeNow = System.currentTimeMillis();
-      if (timeNow - lastGhostMove > 3 * 1000) {
-        lastGhostMove = timeNow;
-        epl = labyrinth.emptyPlace();
-        int index = (int) (Math.random() * ghosts.size());
-        ghosts.get(index).moveGhost(epl[0], epl[1]);
-        multicast.GHOST(epl[0], epl[1]);
+      try {
+        timeNow = System.currentTimeMillis();
+        if (timeNow - lastGhostMove > 3 * 1000) {
+          lastGhostMove = timeNow;
+          epl = labyrinth.emptyPlace();
+          int index = (int) (Math.random() * ghosts.size());
+          ghosts.get(index).moveGhost(epl[0], epl[1]);
+          multicast.GHOST(epl[0], epl[1]);
+        }
+      } catch (IndexOutOfBoundsException e) {
+        this.over = true;
       }
     }
 
