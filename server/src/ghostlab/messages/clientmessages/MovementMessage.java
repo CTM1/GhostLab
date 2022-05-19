@@ -3,7 +3,7 @@ package ghostlab.messages.clientmessages;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-public class MovementMessage {
+public abstract class MovementMessage {
   /** Used by movement message parsers to get the distance. Boilerplate code */
   public static int parseDistance(BufferedReader br) throws IOException {
     br.read(); // space

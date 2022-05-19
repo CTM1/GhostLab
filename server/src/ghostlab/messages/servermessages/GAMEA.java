@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.GameServer;
 
-public class GAMEA implements ServerMessage {
+public class GAMEA extends ServerMessage {
     byte nbOfGames;
 
     public GAMEA(GameServer[] gs) {

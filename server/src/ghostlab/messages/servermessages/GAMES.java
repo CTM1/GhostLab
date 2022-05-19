@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class GAMES implements ServerMessage {
+public class GAMES extends ServerMessage {
     private byte n;
 
     public GAMES(byte n) {

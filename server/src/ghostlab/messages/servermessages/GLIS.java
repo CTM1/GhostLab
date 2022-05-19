@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 
-public class GLIS implements ServerMessage {
+public class GLIS extends ServerMessage {
     private byte nbOfPlayers;
 
     public GLIS(int nbOfPlayers) {
