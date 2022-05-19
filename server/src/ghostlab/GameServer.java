@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -19,9 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GameServer {
   private byte id;
-  private Socket hostTCPSocket;
   private InetAddress hostMulticastAddress;
-  private String hostUDPport;
   private ArrayList<Player> lobby;
   private ArrayList<Character> playersReady;
   private ArrayList<Ghost> ghosts;
@@ -64,7 +60,6 @@ public class GameServer {
       e.printStackTrace();
     }
 
-    this.hostUDPport = hostUDPport;
     try {
       this.lobby.add(new Player(0, hostID, hostUDPport, hostTCPSocket));
     } catch (SocketException e) {
@@ -72,7 +67,6 @@ public class GameServer {
     }
 
     this.labyrinth = new RecursiveMaze(20, 20);
-    this.hostTCPSocket = hostTCPSocket;
     this.ghosts = new ArrayList<Ghost>();
     Logger.verbose(
         "Started new game server %d, multicast on %s:%s\n",
@@ -85,7 +79,7 @@ public class GameServer {
     InputStream inStream;
     OutputStream outStream;
     BufferedReader br;
-    PrintWriter pw;
+    // PrintWriter pw;
 
     public boolean con; // tinue
 
@@ -97,7 +91,7 @@ public class GameServer {
         inStream = playa.TCPSocket.getInputStream();
         outStream = playa.TCPSocket.getOutputStream();
         br = new BufferedReader(new InputStreamReader(inStream));
-        pw = new PrintWriter(new OutputStreamWriter(outStream));
+        // pw = new PrintWriter(new OutputStreamWriter(outStream));
       } catch (Exception e) {
         Logger.log("Whoopsy");
       }

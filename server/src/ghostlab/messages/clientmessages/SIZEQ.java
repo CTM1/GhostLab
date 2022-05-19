@@ -1,7 +1,6 @@
 package ghostlab.messages.clientmessages;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.IOException;
 
 public class SIZEQ {

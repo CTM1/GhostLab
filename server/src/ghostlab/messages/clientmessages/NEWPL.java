@@ -29,6 +29,9 @@ public class NEWPL {
         for(int i=0; i<3; i++) //***
             suffix += (char)br.read();
 
+        if (!suffix.equals("***"))
+            throw new IOException("Invalid message suffix");
+
         return new NEWPL(playerID, port);
     }
 

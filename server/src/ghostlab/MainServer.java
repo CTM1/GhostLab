@@ -99,7 +99,6 @@ public class MainServer {
   private static void parseMainMenuRequests(
       BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, Socket client)
       throws IOException {
-    int failedTries = 0;
     byte currentLobby = 0;
     String currPlayerID = "";
     REGNO failed = new REGNO();
@@ -182,7 +181,6 @@ public class MainServer {
             System.out.println(regGameID);
             int regID = Byte.toUnsignedInt(regGameID);
             System.out.println(regID);
-            String port = regis.getPort();
 
             if (gameServers[regID] == null) {
               throw new InvalidRequestException("Game " + regID + " does not exist.");
@@ -203,7 +201,7 @@ public class MainServer {
             }
             break;
           case "GAME?":
-            GAMEQ gameQ = GAMEQ.parse(br);
+            GAMEQ.parse(br);
             GAMEA gameA = new GAMEA(gameServers);
             gameA.send(os);
 
@@ -213,7 +211,7 @@ public class MainServer {
             }
             break;
           case "START":
-            START start = START.parse(br);
+            START.parse(br);
             if (currentLobby == 0 && currPlayerID == "")
               throw new InvalidRequestException(
                   "Bad request: " + request + ", player not yet properly registered in a game");
@@ -269,18 +267,6 @@ public class MainServer {
     }
 
     return (-1);
-  }
-
-  private static ArrayList<GameServer> getCurrentGames() {
-    ArrayList<GameServer> games = new ArrayList<GameServer>();
-
-    for (GameServer g : gameServers) {
-      if (g != null) {
-        games.add(g);
-      }
-    }
-
-    return games;
   }
 
   private static ArrayList<GameServer> getCurrentAvailableGames() {
