@@ -37,12 +37,13 @@ public class GameServer {
     this.endedPeacefully = new HashMap<Socket, Boolean>();
 
     String newIP = String.format("224.255.0.%d", id);
+    int udpPort = -1;
     try {
       this.hostMulticastAddress = InetAddress.getByName(newIP);
 
       // find port
       boolean foundPort = false;
-      int udpPort;
+      
       do {
         udpPort = ThreadLocalRandom.current().nextInt(1000, 10000);
         foundPort = true;
@@ -69,8 +70,8 @@ public class GameServer {
     this.labyrinth = new RecursiveMaze(20, 20);
     this.ghosts = new ArrayList<Ghost>();
     Logger.verbose(
-        "Started new game server %d, multicast on %s:%s\n",
-        id, this.hostMulticastAddress.toString(), hostUDPport);
+        "Started new game server %d, multicast on %s:%d\n",
+        id, this.hostMulticastAddress.toString(), udpPort);
   }
 
   private class PlayerHandler extends Thread {
@@ -152,6 +153,7 @@ public class GameServer {
                 outStream.write("NSEND***".getBytes());
               }
               outStream.flush();
+              break;
 
             case "GLIS?":
               for (int i = 0; i < 3; i++) br.read(); // read end of message ***
@@ -178,7 +180,7 @@ public class GameServer {
                 buff[read] = c;
                 read++;
               }
-              Logger.log("Sending " + new String(buff) + " from " + playa.getPlayerID());
+              Logger.log("Sending " + new String(buff) + " from " + playa.getPlayerID()+"\n");
               daddy.multicast.MESSA(playa.getPlayerID(), new String(buff, 0, read));
 
               outStream.write("MALL!***".getBytes());
@@ -253,7 +255,7 @@ public class GameServer {
             }
 
             // remove ghost
-            Logger.log("Caught a ghost!");
+            Logger.log("Caught a ghost!"+"\n");
             toRemove.add(g);
           }
         }
@@ -371,7 +373,7 @@ public class GameServer {
     multicast.ENDGA(id, maxScore);
   }
 
-  public synchronized boolean sendMessage(String to, String from, String content) {
+  public synchronized boolean sendMessage(String from, String to, String content) {
     // First, let's find the player
     for (Player p : lobby) {
       if (p.getPlayerID().equals(to)) {

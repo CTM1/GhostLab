@@ -30,6 +30,7 @@ public class Player {
 
   public void propagateMessage(String from, String mess) {
     try {
+      Logger.log(String.format("Whisper from %s to %s : %s\n", from, name, mess));
       byte[] content = String.format("MESSP %s %s+++", from, mess).getBytes();
       DatagramSocket socket = new DatagramSocket();
       InetAddress a = this.TCPSocket.getInetAddress();
