@@ -55,12 +55,10 @@ public class NEWPL implements ClientMessage {
 
     public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
             String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
-            REGNO regno = new REGNO();
-            System.out.println("execute me bitch");
+        REGNO regno = new REGNO();
         if (Byte.toUnsignedInt(nbOfGames) >= 255) {
                 throw new MaximumGameCapacityException();
         } else {
-            System.out.println("Creating new game yayyy");
             int id = ms.createNewGame(this, client);
 
             if (id == -1)
