@@ -2,12 +2,6 @@ package ghostlab;
 
 import java.util.Random;
 
-/**
- * Labyrinth.java A naive but usable LabyrInterface implementation
- *
- * @since 04.04.2022
- * @author whogives4fuck
- */
 public class Labyrinth implements LabyrInterface {
   // The labyrinth properly said, true means cell, false means wall
   private boolean[][] surface;

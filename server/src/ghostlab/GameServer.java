@@ -93,7 +93,6 @@ public class GameServer {
         inStream = playa.TCPSocket.getInputStream();
         outStream = playa.TCPSocket.getOutputStream();
         br = new BufferedReader(new InputStreamReader(inStream));
-        // pw = new PrintWriter(new OutputStreamWriter(outStream));
       } catch (Exception e) {
         Logger.log("Whoopsy");
       }
@@ -172,8 +171,8 @@ public class GameServer {
               }
 
               break;
-            case "MALL?":
-              br.read(); // espace
+            case "MALL?": 
+              br.read();
               char[] buff = new char[200];
               int read = 0;
               while (read <= 200) {
@@ -213,9 +212,6 @@ public class GameServer {
       int moved = 0; // distance traveled
       int[] position = new int[] {playa.getX(), playa.getY()};
       boolean metAGhost = false;
-
-      // System.out.println(String.format("Moving from (%d, %d), dist %d", position[0], position[1],
-      // distance));
 
       while (!metAGhost && moved < distance) {
         switch (direction) {
@@ -270,8 +266,6 @@ public class GameServer {
         }
       }
 
-      // System.out.println(String.format("New pos, (%d, %d), travelled %d", position[0],
-      // position[1], moved));
       // Send new position
       if (!metAGhost) {
         try {
@@ -341,22 +335,7 @@ public class GameServer {
     long timeNow;
     int[] epl;
     while (ghosts.size() > 0) {
-      // TODO the loop
-      // TODO THREAD SAFETY !!!!!
-      // lock displacements
-      // Collision detection between ghosts and players
-      // this is now done at move time
-      // for (Ghost g : ghosts) {
-      //  for (Player p : lobby) {
-      //    if (p.getX() == g.getX() && p.getY() == g.getY()) {
-      //      p.addToScore(1);
-      //      ghosts.remove(g);
-      //      multicast.SCORE(p.getPlayerID(), p.getScore(), p.getX(), p.getY());
-      //    }
-      //  }
-      // }
 
-      // move a ghost around every 3 second
       try {
         timeNow = System.currentTimeMillis();
         if (timeNow - lastGhostMove > 3 * 1000) {
@@ -385,7 +364,6 @@ public class GameServer {
   }
 
   public synchronized boolean sendMessage(String from, String to, String content) {
-    // First, let's find the player
     for (Player p : lobby) {
       if (p.getPlayerID().equals(to)) {
         p.propagateMessage(from, content);
