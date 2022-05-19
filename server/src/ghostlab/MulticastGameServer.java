@@ -29,10 +29,7 @@ public class MulticastGameServer {
     byte[] content;
     DatagramPacket message;
 
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    // nothing but chars with ascii codes under 128, so writing utf is ok
-    (new DataOutputStream(output)).writeUTF(mess);
-    content = output.toByteArray();
+    content = mess.getBytes();
     message = new DatagramPacket(content, content.length, groupeIP, port);
     socket.send(message);
   }
