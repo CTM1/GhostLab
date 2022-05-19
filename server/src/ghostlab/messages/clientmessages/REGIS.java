@@ -1,7 +1,6 @@
 package ghostlab.messages.clientmessages;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.IOException;
 
 public class REGIS {
@@ -36,6 +35,9 @@ public class REGIS {
 
         for(int i=0; i<3; i++) //***
             suffix += (char) br.read();
+
+        if (!suffix.equals("***"))
+            throw new IOException("Invalid message suffix");
 
         return new REGIS(playerID, port, gID);
     }

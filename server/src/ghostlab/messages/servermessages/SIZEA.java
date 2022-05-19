@@ -2,7 +2,6 @@ package ghostlab.messages.servermessages;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import ghostlab.GameServer;
 import ghostlab.LabyrInterface;

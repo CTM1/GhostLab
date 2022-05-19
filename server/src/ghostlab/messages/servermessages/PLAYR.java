@@ -3,7 +3,6 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import ghostlab.GameServer;
 import ghostlab.Player;
 
 public class PLAYR implements ServerMessage {

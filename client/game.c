@@ -222,13 +222,15 @@ void *player_refresh(void *arg) {
             int x = prta->gl->pos_scores[i]->x;
             int y = prta->gl->pos_scores[i]->y;
             int score = prta->gl->pos_scores[i]->score;
-            if (strncmp(prta->gl->usernames[i], prta->playerName, 8))
+            int is_player = !strncmp(prta->gl->usernames[i], prta->playerName, 8);
+            if (!is_player)
                 player_grid[y][x] = prta->gl->usernames[i][0];
             else
                 wattron(prta->gmw->playerlistwindow, A_BOLD);
             mvwprintw(prta->gmw->playerlistwindow, i, 0, "%s (%d,%d) : %d  ",
             prta->gl->usernames[i], x, y, score);
-            wattroff(prta->gmw->playerlistwindow, A_BOLD);
+            if (is_player)
+                wattroff(prta->gmw->playerlistwindow, A_BOLD);
             wrefresh(prta->gmw->playerlistwindow);
         }
         refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
