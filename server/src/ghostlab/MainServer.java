@@ -54,6 +54,7 @@ public class MainServer {
   private static void acceptClient(ServerSocket servsock) {
     try {
       Socket socket = servsock.accept();
+      Logger.log("Accepting "+socket+"\n");
       ClientHandler ch = new ClientHandler(socket);
       ch.start();
     } catch (Exception e) {
@@ -82,8 +83,8 @@ public class MainServer {
     OutputStream outStream = client.getOutputStream();
     BufferedReader br = new BufferedReader(new InputStreamReader(inStream));
     PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
-
-    GAMES welcome = new GAMES(nbOfGames);
+    Logger.log("Starting ClientHandler for "+client+"\n");
+    GAMES welcome = new GAMES((byte)getCurrentAvailableGames().size());
     welcome.send(outStream);
 
     for (GameServer gs : getCurrentAvailableGames()) {
@@ -226,7 +227,8 @@ public class MainServer {
 
               HashMap<Socket, Boolean> hs = MainServer.gameServers[currentLobby].getEndedPeacefully();
               //Close client connection
-              if (!hs.get(client)) {
+              Boolean ret = hs.get(client);
+              if (ret != null && !ret) {
                 return;  
               }
             }
