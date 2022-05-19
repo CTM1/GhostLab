@@ -60,8 +60,7 @@ void draw_empty_game_window(int row, int col, game_windows *gw) {
     wrefresh(w);
 }
 
-game_windows * draw_game_windows(int row, int col, char *connip, char *connport, uint8_t gameId) {
-    game_windows *gw = malloc(sizeof(game_windows));
+void draw_game_windows_borders(int row, int col, char *connip, char *connport, uint8_t gameId) {
     WINDOW *topwindow = newwin(5, col, 0, 0);
     box(topwindow, 0, 0);
     mvwprintw(topwindow, 2, 4, "GhostLab -- OCB client -- v0.1 | Game %d", gameId);
@@ -70,29 +69,54 @@ game_windows * draw_game_windows(int row, int col, char *connip, char *connport,
     mvwprintw(topwindow, 2, col-strlen(connmsg)-5, "%s", connmsg);
     wrefresh(topwindow);
 
-    WINDOW *playerlistwindow = newwin((row-4)/2, col/3+1, 4, (2*col/3)-1);
-    box(playerlistwindow, 0, 0);
-    mvwaddch(playerlistwindow, 0, col/3, ACS_RTEE);
+    WINDOW *playerlistwindowborders = newwin((row-4)/2 - 1, col/3+1, 4, (2*col/3)-1);
+    box(playerlistwindowborders, 0, 0);
+    mvwaddch(playerlistwindowborders, 0, col/3, ACS_RTEE);
+    wrefresh(playerlistwindowborders);
+
+    WINDOW *chatwindowborders = newwin((row-4)/2+2, col/3+1, 4+(row-4)/2 - 2, (2*col/3)-1);
+    box(chatwindowborders, 0, 0);
+    mvwaddch(chatwindowborders, 0, col/3, ACS_RTEE);
+    wrefresh(chatwindowborders);
+    
+
+    WINDOW *inputwindowborders = newwin(5, (2*col/3), row-5, 0);
+    box(inputwindowborders, 0, 0);
+    mvwaddch(inputwindowborders, 4, (2*col/3)-1, ACS_BTEE);
+    wrefresh(inputwindowborders);
+
+    WINDOW *gamewinborders = newwin(row-4-4, (2*col)/3, 4, 0);
+    box(gamewinborders, 0, 0);
+    mvwaddch(gamewinborders, 0, 0, ACS_LTEE);
+    mvwaddch(gamewinborders, 0, (2*col)/3-1, ACS_TTEE);
+    mvwaddch(gamewinborders, (row-4)/2-2, (2*col)/3-1, ACS_LTEE);
+    mvwaddch(gamewinborders, row-4-4-1, (2*col)/3-1, ACS_RTEE);
+    mvwaddch(gamewinborders, row-4-4-1, 0, ACS_LTEE);
+    wrefresh(gamewinborders);
+
+    
+    
+}
+
+game_windows * draw_game_windows(int row, int col) {
+    game_windows *gw = malloc(sizeof(game_windows));
+
+    WINDOW *playerlistwindow = newwin((row-4)/2-1 - 2, col/3+1 - 2, 4 + 1, (2*col/3)-1 + 1);
     wrefresh(playerlistwindow);
 
-    WINDOW *chatwindow = newwin((row-4)/2+2, col/3+1, 4+(row-4)/2-2, (2*col/3)-1);
-    box(chatwindow, 0, 0);
-    mvwaddch(chatwindow, 0, col/3, ACS_RTEE);
+    WINDOW *chatwindow = newwin((row-4)/2+2 - 2, col/3+1 - 2, 4+(row-4)/2-2 + 1, (2*col/3)-1 + 1);
     wrefresh(chatwindow);
 
-    WINDOW *inputwindow = newwin(5, (2*col/3), row-5, 0);
-    box(inputwindow, 0, 0);
-    mvwaddch(inputwindow, 4, (2*col/3)-1, ACS_BTEE);
+    WINDOW *inputwindow = newwin(5 - 2, (2*col/3) - 2, row-5 + 1, 0 + 1);
     wrefresh(inputwindow);
 
-    draw_empty_game_window(row, col, gw);
+    WINDOW *gamewin = newwin(row-4-4 - 2, (2*col)/3 - 2, 4 + 1, 0 + 1);
+    wrefresh(gamewin);
 
-
-
-    gw->topwindow = topwindow;
     gw->playerlistwindow = playerlistwindow;
     gw->chatwindow = chatwindow;
     gw->inputwindow = inputwindow;
+    gw->gamewindow = gamewin;
 
     return gw;
 }
@@ -139,11 +163,11 @@ void free_game_view(char **render, int height) {
 }
 
 void refresh_lab_view(int **lab, game_windows *gw, welcome *welco, position_score *pos, int gwsizex, int gwsizey) {
-    char **render = get_game_view(lab, welco->width, welco->height, gwsizex-1, gwsizey-2, pos->x, pos->y);
-    for(int i=0; i<gwsizey-2; i++) {
-        mvwprintw(gw->gamewindow, 1+i, 1, "%s", render[i]);
+    char **render = get_game_view(lab, welco->width, welco->height, gwsizex, gwsizey, pos->x, pos->y);
+    for(int i=0; i<gwsizey; i++) {
+        mvwprintw(gw->gamewindow, i, 0, "%s", render[i]);
     }
-    free_game_view(render, gwsizey-2);
+    free_game_view(render, gwsizey);
     wrefresh(gw->gamewindow);
 }
 
@@ -202,7 +226,7 @@ void *player_refresh(void *arg) {
                 player_grid[y][x] = prta->gl->usernames[i][0];
             else
                 wattron(prta->gmw->playerlistwindow, A_BOLD);
-            mvwprintw(prta->gmw->playerlistwindow, 1+i, 1, "%s (%d,%d) : %d  ",
+            mvwprintw(prta->gmw->playerlistwindow, i, 0, "%s (%d,%d) : %d  ",
             prta->gl->usernames[i], x, y, score);
             wattroff(prta->gmw->playerlistwindow, A_BOLD);
             wrefresh(prta->gmw->playerlistwindow);
@@ -247,8 +271,9 @@ void handle_ghost(int mcsock, char *request) {
     hta->hint_char = '?';
     hta->x = x;
     hta->y = y;
-    hta->timeout = 5;
+    hta->timeout = 3;
     pthread_create(t, NULL, hint, (void*)hta);
+    pthread_detach(*t);
     // fprintf(stderr, "> GHOST %s %s+++\n", x_str, y_str);
 }
 
@@ -277,11 +302,12 @@ void handle_score(int mcsock, glist *gl, char *request) {
     hta->y = y;
     hta->timeout = 3;
     pthread_create(t, NULL, hint, (void*)hta);
+    pthread_detach(*t);
     // fprintf(stderr, "> SCORE %s %s %s %s+++\n", player_id, score_str, x_str, y_str);
 }
 
 void handle_messa(int mcsock, char *request, game_windows *gmw) {
-    fprintf(stderr, "GOT MESSA\n");
+    // fprintf(stderr, "GOT MESSA\n");
     char player_id[9];
     memcpy(player_id, request, 8);
     player_id[8] = 0;
@@ -301,7 +327,7 @@ void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
     int r = recv(mcsock, request, 256, 0);
     if (r > 0) {
         request[255] = 0;
-        fprintf(stderr, "%s\n", request);
+        // fprintf(stderr, "%s\n", request);
         if (!strncmp(request, "GHOST ", 6)) {
             handle_ghost(mcsock, request+6);
         } else if (!strncmp(request, "SCORE ", 6)) {
@@ -314,20 +340,11 @@ void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
     }
 }
 
-void reset_input_window(game_windows *gw, int col) {
-    wclear(gw->inputwindow);
-    box(gw->inputwindow, 0, 0);
-    mvwaddch(gw->inputwindow, 4, (2*col/3)-1, ACS_LTEE);
-    mvwaddch(gw->inputwindow, 0, 0, ACS_RTEE);
-    mvwaddch(gw->inputwindow, 0, (2*col/3)-1, ACS_RTEE);
-    wrefresh(gw->inputwindow);
-}
-
 void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname, int port) {
     int row, col;
     getmaxyx(stdscr, row, col);
-    int gwsizex = (2*col)/3-2;
-    int gwsizey = row-4-4;
+    int gwsizex = (2*col)/3 - 2;
+    int gwsizey = row-4-4 - 2;
     int r;
 
     int mcsocket = socket(PF_INET, SOCK_DGRAM, 0);
@@ -386,8 +403,8 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     r = handle_posit(sock, pos);
     pthread_mutex_unlock(&lock);
     
-
-    game_windows *gw = draw_game_windows(row, col, connip, connport, welco->gameId);
+    draw_game_windows_borders(row, col, connip, connport, welco->gameId);
+    game_windows *gw = draw_game_windows(row, col);
 
     glist *gl = malloc(sizeof(glist));
 
@@ -434,7 +451,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         }
         switch ((char)key) {
             case 'm':
-                wmove(gw->inputwindow, 1, 1);
+                wmove(gw->inputwindow, 0, 0);
                 echo();
                 curs_set(1);
                 char msg[201];
@@ -447,7 +464,8 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 pthread_mutex_unlock(&lock);
                 curs_set(0);
                 noecho();
-                reset_input_window(gw, col);
+                wclear(gw->inputwindow);
+                wrefresh(gw->inputwindow);
                 break;
             case 'p':
                 break;
