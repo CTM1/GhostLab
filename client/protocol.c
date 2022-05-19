@@ -355,9 +355,9 @@ int send_mall(int sock, char *msg, int msglength) {
     return 0;
 }
 
-int private_msg(int sock, char playerid[8], char *msg, int msglength) {
+int private_msg(int sock, char *playerid, char *msg, int msglength) {
     char request[18+msglength];
-    sprintf(request, "MALL? %s***", msg);
+    sprintf(request, "SEND? %s %s***", playerid, msg);
     if (send(sock, request, 18+msglength, 0) < 0)
         return -1;
     char response[8];

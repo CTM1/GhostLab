@@ -45,6 +45,7 @@ int posmod(int i, int n);
 int divroundup(int a, int b);
 int recv_n_bytes(int sock, void *buffer, int n);
 void format_username(char *username);
+void format_port(char *port);
 
 extern char *logolines[];
 

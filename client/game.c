@@ -48,17 +48,6 @@ typedef struct {
     int timeout;
 } hint_thread_args;
 
-void draw_empty_game_window(int row, int col, game_windows *gw) {
-    WINDOW *w = newwin(row-4-4, (2*col)/3, 4, 0);
-    box(w, 0, 0);
-    mvwaddch(w, 0, 0, ACS_LTEE);
-    mvwaddch(w, 0, (2*col)/3-1, ACS_TTEE);
-    mvwaddch(w, (row-4)/2-2, (2*col)/3-1, ACS_LTEE);
-    mvwaddch(w, row-4-4-1, (2*col)/3-1, ACS_RTEE);
-    mvwaddch(w, row-4-4-1, 0, ACS_LTEE);
-    gw->gamewindow = w;
-    wrefresh(w);
-}
 
 void draw_game_windows_borders(int row, int col, char *connip, char *connport, uint8_t gameId) {
     WINDOW *topwindow = newwin(5, col, 0, 0);
@@ -105,9 +94,11 @@ game_windows * draw_game_windows(int row, int col) {
     wrefresh(playerlistwindow);
 
     WINDOW *chatwindow = newwin((row-4)/2+2 - 2, col/3+1 - 2, 4+(row-4)/2-2 + 1, (2*col/3)-1 + 1);
+    scrollok(chatwindow, true);
     wrefresh(chatwindow);
 
     WINDOW *inputwindow = newwin(5 - 2, (2*col/3) - 2, row-5 + 1, 0 + 1);
+    scrollok(inputwindow, true);
     wrefresh(inputwindow);
 
     WINDOW *gamewin = newwin(row-4-4 - 2, (2*col)/3 - 2, 4 + 1, 0 + 1);
@@ -317,19 +308,19 @@ void handle_messa(int mcsock, char *request, game_windows *gmw) {
     wrefresh(gmw->chatwindow);
     int c = 9;
     do {
+        //fprintf(stderr, "%d ", c);
         wprintw(gmw->chatwindow, "%c", request[c]);
         c++;
-    } while (c >=200 || !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
+    } while (c <= 209 && !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
     wprintw(gmw->chatwindow, "\n");
     wrefresh(gmw->chatwindow);
 }
 
 void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
-    char request[256];
+    char *request = malloc(256);
     int r = recv(mcsock, request, 256, 0);
     if (r > 0) {
         request[255] = 0;
-        // fprintf(stderr, "%s\n", request);
         if (!strncmp(request, "GHOST ", 6)) {
             handle_ghost(mcsock, request+6);
         } else if (!strncmp(request, "SCORE ", 6)) {
@@ -342,6 +333,28 @@ void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
     }
 }
 
+void handle_udp_requests(int udpsock, game_windows *gmw) {
+    char request[256];
+    int r = recv(udpsock, request, 256, 0);
+    if (r > 0) {
+        request[255] = 0;
+        if (!strncmp(request, "MESSP ", 6)) {
+            char player_id[9];
+            memcpy(player_id, request+6, 8);
+            player_id[8] = 0;
+            wprintw(gmw->chatwindow, "<whisper from %s> ", player_id);
+            wrefresh(gmw->chatwindow);
+            int c = 15;
+            do {
+                wprintw(gmw->chatwindow, "%c", request[c]);
+                c++;
+            } while (c <= 215 && !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
+            wprintw(gmw->chatwindow, "\n");
+            wrefresh(gmw->chatwindow);
+        }
+    }
+}
+
 void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname, int port) {
     int row, col;
     getmaxyx(stdscr, row, col);
@@ -350,10 +363,10 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     int r;
 
     int mcsocket = socket(PF_INET, SOCK_DGRAM, 0);
-    // int udpsocket = socket(AF_INET, SOCK_DGRAM, 0);
+    int udpsocket = socket(AF_INET, SOCK_DGRAM, 0);
 
     fcntl(mcsocket, F_SETFL, O_NONBLOCK);
-    // fcntl(udpsocket, F_SETFL, O_NONBLOCK);
+    fcntl(udpsocket, F_SETFL, O_NONBLOCK);
 
     struct sockaddr_in mcaddr;
     memset(&mcaddr, 0, sizeof(mcaddr));
@@ -361,18 +374,18 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     mcaddr.sin_port = htons(welco->port);
 
-    // struct sockaddr_in udpaddr;
-    // memset(&udpaddr, 0, sizeof(udpaddr));
-    // udpaddr.sin_family = AF_INET;
-    // mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    // udpaddr.sin_port = htons(port);
+    struct sockaddr_in udpaddr;
+    memset(&udpaddr, 0, sizeof(udpaddr));
+    udpaddr.sin_family = AF_INET;
+    mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    udpaddr.sin_port = htons(port);
 
     const int trueFlag = 1;
     setsockopt(mcsocket, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
 
     r = bind(mcsocket, (struct sockaddr*) &mcaddr, sizeof(mcaddr));
     // fprintf(stderr, "[*] Bind multicast socket, r=%d (%d)\n", r, errno);
-    // r = bind(udpsocket, (struct sockaddr*) &udpaddr, sizeof(udpaddr));
+    r = bind(udpsocket, (struct sockaddr*) &udpaddr, sizeof(udpaddr));
 
     struct ip_mreq mreq;
     inet_pton(AF_INET, welco->ip, &mreq.imr_multiaddr.s_addr);
@@ -434,6 +447,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
 
     while(true) {
         handle_multicast_requests(mcsocket, gl, gw);
+        handle_udp_requests(udpsocket, gw);
         if (gameOver)
             return;
         int key = getch();
@@ -451,12 +465,12 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 do_move(sock, "DOMOV", 3, lab, pos, prevpos);
                 break;
         }
+        char msg[201];
         switch ((char)key) {
             case 'm':
                 wmove(gw->inputwindow, 0, 0);
                 echo();
                 curs_set(1);
-                char msg[201];
                 wprintw(gw->inputwindow, "chat> ");
                 wrefresh(gw->inputwindow);
                 wgetnstr(gw->inputwindow, msg, 200);
@@ -470,6 +484,31 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 wrefresh(gw->inputwindow);
                 break;
             case 'p':
+                wmove(gw->inputwindow, 0, 0);
+                echo();
+                curs_set(1);
+                char recipient[9];
+                memset(recipient, 0, 9);
+                wprintw(gw->inputwindow, "id of recipient> ");
+                wrefresh(gw->inputwindow);
+                wgetnstr(gw->inputwindow, recipient, 8);
+                format_username(recipient);
+                recipient[8] = 0;
+                wclear(gw->inputwindow);
+                wrefresh(gw->inputwindow);
+                wmove(gw->inputwindow, 0, 0);
+                char msg[201];
+                wprintw(gw->inputwindow, "whisper to %s> ", recipient);
+                wrefresh(gw->inputwindow);
+                wgetnstr(gw->inputwindow, msg, 200);
+                msg[200] = 0;
+                pthread_mutex_lock(&lock);
+                private_msg(sock, recipient, msg, strlen(msg));
+                pthread_mutex_unlock(&lock);
+                curs_set(0);
+                noecho();
+                wclear(gw->inputwindow);
+                wrefresh(gw->inputwindow);
                 break;
             case 'e':
                 break;

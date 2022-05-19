@@ -87,10 +87,10 @@ void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port
     mvwprintw(gmw->buttonswindow, 5, 2, "Pseudo : ");
     mvwprintw(gmw->buttonswindow, 6, 2, "Port   : ");
     wmove(gmw->buttonswindow, 5, 11);
-    wgetstr(gmw->buttonswindow, username);
+    wgetnstr(gmw->buttonswindow, username, 8);
     username[8] = 0;
     wmove(gmw->buttonswindow, 6, 11);
-    wgetstr(gmw->buttonswindow, port);
+    wgetnstr(gmw->buttonswindow, port, 4);
     port[4] = 0;
     noecho();
     curs_set(0);
@@ -167,6 +167,7 @@ void gamelist(int sock, char *ip, char *port) {
                     memset(username, 0, 9);
                     askUsernameAndPort(gmw, username, udpport);
                     format_username(username);
+                    format_port(udpport);
                     send_regis(sock, username, udpport, gamelist[selectedGame].gameId);
                     char response[11];
                     int r;
@@ -210,6 +211,7 @@ void gamelist(int sock, char *ip, char *port) {
                         memset(username, 0, 9);
                         askUsernameAndPort(gmw, username, udpport);
                         format_username(username);
+                        format_port(udpport);
                         send_newpl(sock, username, udpport);
                         char response[11];
                         int r;
