@@ -107,11 +107,9 @@ public class MainServer {
 		private void parseMainMenuRequests(
 				BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, Socket client, MainServer ms)
 				throws IOException {
-
-			REGNO regno = new REGNO();
 			DUNNO dunno = new DUNNO();
-			String[] messages = { "UNREG", "SIZEQ", "SENDQ", "LISTQ", "NEWPL", "REGIS", "GAME", "START"};
-			String[] gameMessages = { "GLIS?", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "REGIS", "GAME", "START"};
+			String[] messages = { "UNREG", "SIZEQ", "SENDQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
+			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ"};
 
 			while (true) {
 				String request = "";
@@ -122,8 +120,17 @@ public class MainServer {
 					Logger.log("Received " + request + "\n");
 					request = request.replace("?", "Q");
 
+					if (Arrays.asList(gameMessages).contains(request)) {
+						Logger.log("Ignoring game message.");
+						while (br.read() != '*') {
+							br.read();
+							br.read();
+						}
+						continue;
+					}
+
 					if (Arrays.asList(messages).contains(request)) {
-						Class c = Class.forName("ghostlab.messages.clientmessages." + request);
+						Class<?> c = Class.forName("ghostlab.messages.clientmessages." + request);
 						Method parse = c.getMethod("parse", BufferedReader.class);
 						Method exec = c.getMethod("executeRequest", Byte.class, BufferedReader.class,
 								GameServer[].class, Byte[].class,
