@@ -329,6 +329,17 @@ void handle_messa(int mcsock, char *request, game_windows *gmw) {
     wrefresh(gmw->chatwindow);
 }
 
+void handle_endga(int mcsock, char *request) {
+    gameOver = 1;
+    char player_id[9];
+    char score_str[5];
+    memcpy(player_id, request+9, 8);
+    player_id[8] = 0;
+    memcpy(score_str, request, 4);
+    score_str[4] = 0;
+    fprintf(stderr, "MULTICAST> ENDGA %s %s+++\n", player_id, score_str);
+}
+
 void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
     char *request = malloc(256);
     int r = recv(mcsock, request, 256, 0);
@@ -341,8 +352,7 @@ void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
         } else if (!strncmp(request, "MESSA ", 6)) {
             handle_messa(mcsock, request+6, gmw);
         } else if (!strncmp(request, "ENDGA ", 6)) {
-            pthread_mutex_lock(&lock);
-            gameOver = 1;
+            handle_endga(mcsock, request+6);
         }
     }
     free(request);
@@ -463,8 +473,8 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     timeout(500);
 
     while(true) {
-        handle_multicast_requests(mcsocket, gl, gw);
         handle_udp_requests(udpsocket, gw);
+        handle_multicast_requests(mcsocket, gl, gw);
         if (gameOver) {
             clear();
             refresh();
