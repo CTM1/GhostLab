@@ -117,7 +117,7 @@ public class MainServer {
 					for (int i = 0; i < 5; i++) {
 						request += (char) (br.read());
 					}
-					Logger.log("Received " + request + "\n");
+					Logger.log("(MS) Received " + request + "\n");
 					request = request.replace("?", "Q");
 
 					if (Arrays.asList(gameMessages).contains(request)) {

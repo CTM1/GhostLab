@@ -1,6 +1,7 @@
 package ghostlab;
 
 import ghostlab.messages.clientmessages.menu.REGIS;
+import ghostlab.messages.clientmessages.menu.START;
 import ghostlab.messages.servermessages.*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class GameServer {
   private byte id;
   private InetAddress hostMulticastAddress;
   private ArrayList<Player> lobby;
-  private ArrayList<Character> playersReady;
+  private ArrayList<START> playersReady;
   private ArrayList<Ghost> ghosts;
   private HashMap<Player, PlayerHandler> handlers;
   private HashMap<Socket, Boolean> endedPeacefully;
@@ -34,7 +35,7 @@ public class GameServer {
   public GameServer(byte id, String hostUDPport, String hostID, Socket hostTCPSocket) {
     this.id = id;
     this.lobby = new ArrayList<Player>();
-    this.playersReady = new ArrayList<Character>();
+    this.playersReady = new ArrayList<START>();
     this.handlers = new HashMap<Player, PlayerHandler>();
     this.endedPeacefully = new HashMap<Socket, Boolean>();
 
@@ -123,7 +124,7 @@ public class GameServer {
           }
 
           request = request.replace("?", "Q");
-          Logger.log("Received "+request+"\n");
+          Logger.log("(GS) Received "+request+"\n");
 
           if (Arrays.asList(gameMessages).contains(request)) {
             Class<?> c = Class.forName("ghostlab.messages.clientmessages.game." + request);
@@ -225,55 +226,8 @@ public class GameServer {
     }
   }
 
-  public void startTheGameIfAllReady() {
-    if (playersReady.size() == lobby.size()) {
-      started = true;
-      WELCO w =
-          new WELCO(
-              this.id,
-              labyrinth.getHeight(),
-              labyrinth.getWidth(),
-              (byte) ghosts.size(),
-              hostMulticastAddress.toString(),
-              Integer.toString(multicast.getPort()));
-
-      for (Player p : lobby) {
-        try {
-          PlayerHandler hl = new PlayerHandler(p, this);
-          handlers.put(p, hl);
-          hl.start();
-
-          w.send(handlers.get(p).getOutputStream());
-        } catch (Exception e) {
-          Logger.verbose("fuk u");
-        }
-      }
-
-      int[] emplacement;
-      for (int i = 0; i < lobby.size() * 2; i++) {
-        emplacement = labyrinth.emptyPlace();
-        Ghost g = new Ghost(emplacement[0], emplacement[1]);
-        ghosts.add(g);
-      }
-
-      for (Player p : lobby) {
-        emplacement = labyrinth.emptyPlace();
-        p.setPos(emplacement[0], emplacement[1]);
-        try {
-          (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
-              .send(handlers.get(p).getOutputStream());
-        } catch (Exception e) {
-          Logger.log("Nop");
-        }
-      }
-
-      System.out.println(labyrinth);
-      gameLoop();
-    }
-  }
-
   /** The main game loop, takes care of score, moves the ghosts around, check collision, etc */
-  public void gameLoop() {
+  public synchronized void gameLoop() {
     long lastGhostMove = System.currentTimeMillis();
     long timeNow;
     int[] epl;
@@ -304,6 +258,67 @@ public class GameServer {
     }
     multicast.ENDGA(id, maxScore);
     this.over = true;
+    
+    notifyAll();
+    
+  }
+
+  public void startGame() {
+    started = true;
+    WELCO w =
+        new WELCO(
+            this.id,
+            labyrinth.getHeight(),
+            labyrinth.getWidth(),
+            (byte) ghosts.size(),
+            hostMulticastAddress.toString(),
+            Integer.toString(multicast.getPort()));
+
+    for (Player p : lobby) {
+      try {
+        PlayerHandler hl = new PlayerHandler(p, this);
+        handlers.put(p, hl);
+        hl.start();
+
+        w.send(handlers.get(p).getOutputStream());
+      } catch (Exception e) {
+        Logger.verbose("fuk u");
+      }
+    }
+
+    int[] emplacement;
+    for (int i = 0; i < lobby.size() * 2; i++) {
+      emplacement = labyrinth.emptyPlace();
+      Ghost g = new Ghost(emplacement[0], emplacement[1]);
+      ghosts.add(g);
+    }
+
+    for (Player p : lobby) {
+      emplacement = labyrinth.emptyPlace();
+      p.setPos(emplacement[0], emplacement[1]);
+      try {
+        (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
+            .send(handlers.get(p).getOutputStream());
+      } catch (Exception e) {
+        Logger.log("Nop");
+      }
+    }
+
+    System.out.println(labyrinth);
+    gameLoop();
+  }
+
+  public class GameStarter extends Thread {
+    @Override
+    public void run() {
+        startGame();
+    }
+  }
+
+  public void startTheGameIfAllReady() {
+    if (playersReady.size() == lobby.size()) {
+      new GameStarter().start();
+    }
   }
 
   public synchronized boolean sendMessage(String from, String to, String content) {
@@ -385,8 +400,8 @@ public class GameServer {
     return (this.over);
   }
 
-  public void addPlayerReady() {
-    playersReady.add('a');
+  public void addPlayerReady(START s) {
+    playersReady.add(s);
   }
 
   public MulticastGameServer getMulticast() {

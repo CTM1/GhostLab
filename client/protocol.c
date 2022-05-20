@@ -1,4 +1,5 @@
 #include <endian.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -347,14 +348,18 @@ int iquit(int sock) {
 }
 
 int get_glist(int sock, glist *glist) {
+    fprintf(stderr, "get_glistget_glistget_glistget_glist\n");
     if (send(sock, "GLIS?***", 8, 0) < 0)
         return -1;
     fprintf(stderr, "< GLIS?***\n");
     char response[10];
-    if (recv_n_bytes(sock, response, 10) < 0)
+    int r = recv_n_bytes(sock, response, 10);
+    fprintf(stderr, "[*] get_glist, recv=%d (%d)\n", r, errno);
+    if (r < 0)
         return -1;
     if (strncmp(response, "GLIS!", 5))
         return 2;
+    fprintf(stderr, "[*] get_glist, got GLIS!\n");
     uint8_t nbPlayers = (uint8_t)response[6];
     fprintf(stderr, "> GLIS! [%d]***\n", nbPlayers);
     glist->nplayers = nbPlayers;

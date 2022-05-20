@@ -383,6 +383,7 @@ void handle_udp_requests(int udpsock, game_windows *gmw) {
 }
 
 void maingame(int sock, char *connip, char *connport, welcome *welco, char *plname, int port) {
+    gameOver = 0;
     int row, col;
     getmaxyx(stdscr, row, col);
     int gwsizex = (2*col)/3 - 2;
@@ -411,8 +412,9 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     setsockopt(mcsocket, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
 
     r = bind(mcsocket, (struct sockaddr*) &mcaddr, sizeof(mcaddr));
-    // fprintf(stderr, "[*] Bind multicast socket, r=%d (%d)\n", r, errno);
+    fprintf(stderr, "[*] Bind multicast socket, r=%d (%d)\n", r, errno);
     r = bind(udpsocket, (struct sockaddr*) &udpaddr, sizeof(udpaddr));
+    fprintf(stderr, "[*] Bind udp socket, r=%d (%d)\n", r, errno);
 
     struct ip_mreq mreq;
     inet_pton(AF_INET, welco->ip, &mreq.imr_multiaddr.s_addr);
@@ -443,6 +445,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     position_score *pos = malloc(sizeof(position_score));
     pthread_mutex_lock(&lock);
     r = handle_posit(sock, pos);
+    fprintf(stderr, "[*] handle_posit, r=%d (%d)\n", r, errno);
     pthread_mutex_unlock(&lock);
     
     draw_game_windows_borders(row, col, connip, connport, welco->gameId);
@@ -463,6 +466,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     prta->gl = gl;
     r = pthread_create(&player_refresh_thread, NULL, player_refresh, (void*)prta);
     if (r != 0) {
+        fprintf(stderr, "[!] THREAD CREATION FAILED, EXITING\n");
         return;
     }
 
@@ -577,6 +581,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     free(prevpos);
 
     if (!gameOver) {
+        close(sock);
         endwin();
         exit(0);
     }

@@ -26,17 +26,27 @@ public class START implements MenuMessage {
     return new START();
   }
 
-  public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
+  public synchronized void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
       String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
     if (currentLobby[0] == 0 && currPlayerID[0] == "")
       throw new InvalidRequestException(
           "Player not yet properly registered in a game");
     else {
-      ms.getGameServers()[currentLobby[0]].addPlayerReady();
-      ms.getGameServers()[currentLobby[0]].startTheGameIfAllReady();
+      GameServer gs = ms.getGameServers()[currentLobby[0]];
+      gs.addPlayerReady(this);
+      gs.startTheGameIfAllReady();
       // wait the game out
-      while (!ms.getGameServers()[currentLobby[0]].isOver())
-        ;
+      // while (!ms.getGameServers()[currentLobby[0]].isOver())
+      //   ;
+      
+      System.out.println(this);
+
+      synchronized(gs) {
+        gs.wait();
+      }
+      
+      
+      Logger.log(currPlayerID[0] + " FUCKO\n");
 
       HashMap<Socket, Boolean> hs = ms.getGameServers()[currentLobby[0]].getEndedPeacefully();
       // Close client connection
@@ -48,7 +58,7 @@ public class START implements MenuMessage {
     }
   }
 
-  public String toString() {
-    return ("START***");
-  }
+  // public String toString() {
+    // return ("START***");
+  // }
 }
