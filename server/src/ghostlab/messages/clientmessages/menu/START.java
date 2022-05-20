@@ -26,35 +26,35 @@ public class START implements MenuMessage {
     return new START();
   }
 
-  public synchronized void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-      String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
-    if (currentLobby[0] == 0 && currPlayerID[0] == "")
+  public synchronized void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws Exception {
+    if (ch.currentLobby[0] == 0 && ch.currPlayerID[0] == "")
       throw new InvalidRequestException(
           "Player not yet properly registered in a game");
     else {
-      GameServer gs = ms.getGameServers()[currentLobby[0]];
+      GameServer gs = ch.ms.getGameServers()[ch.currentLobby[0]];
       gs.addPlayerReady(this);
       gs.startTheGameIfAllReady();
+      ch.shouldStop = true;
       // wait the game out
       // while (!ms.getGameServers()[currentLobby[0]].isOver())
       //   ;
       
-      System.out.println(this);
+      // System.out.println(this);
 
-      synchronized(gs) {
-        gs.wait();
-      }
+      // synchronized(gs) {
+      //   gs.wait();
+      // }
       
       
-      Logger.log(currPlayerID[0] + " FUCKO\n");
+      // Logger.log(ch.ch.currPlayerID[0] + " FUCKO\n");
 
-      HashMap<Socket, Boolean> hs = ms.getGameServers()[currentLobby[0]].getEndedPeacefully();
-      // Close client connection
-      Logger.log("BBBBB " + hs + "\n");
-      Boolean ret = hs.get(client);
-      if (ret != null && !ret) {
-        return;
-      }
+      // HashMap<Socket, Boolean> hs = ms.getGameServers()[currentLobby[0]].getEndedPeacefully();
+      // // Close client connection
+      // Logger.log("BBBBB " + hs + "\n");
+      // Boolean ret = hs.get(client);
+      // if (ret != null && !ret) {
+      //   return;
+      // }
     }
   }
 

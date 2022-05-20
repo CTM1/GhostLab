@@ -65,11 +65,12 @@ public class MainServer {
 		}
 	}
 
-	private class ClientHandler extends Thread {
-		Socket socket;
-		MainServer ms;
-		String[] currPlayerID = {""};
-		Byte[] currentLobby = {0x00};
+	public class ClientHandler extends Thread {
+		public Socket socket;
+		public MainServer ms;
+		public String[] currPlayerID = {""};
+		public Byte[] currentLobby = {0x00};
+		public boolean shouldStop = false;
 
 		public ClientHandler(Socket socket, MainServer ms) {
 			this.socket = socket;
@@ -100,8 +101,6 @@ public class MainServer {
 			}
 
 			parseMainMenuRequests(br, pw, inStream, outStream, client, ms);
-
-			client.close();
 		}
 
 		private void parseMainMenuRequests(
@@ -112,6 +111,8 @@ public class MainServer {
 			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
 
 			while (true) {
+				if (shouldStop)
+					break;
 				String request = "";
 				try {
 					for (int i = 0; i < 5; i++) {
@@ -132,13 +133,10 @@ public class MainServer {
 					if (Arrays.asList(messages).contains(request)) {
 						Class<?> c = Class.forName("ghostlab.messages.clientmessages.menu." + request);
 						Method parse = c.getMethod("parse", BufferedReader.class);
-						Method exec = c.getMethod("executeRequest", Byte.class, BufferedReader.class,
-								GameServer[].class, Byte[].class,
-								String[].class, OutputStream.class, Socket.class, MainServer.class);
+						Method exec = c.getMethod("executeRequest", BufferedReader.class, OutputStream.class, MainServer.ClientHandler.class);
 
 						Object reqObj = parse.invoke(null, br);
-						exec.invoke(reqObj, nbOfGames, br, gameServers, this.currentLobby,
-								this.currPlayerID, os, client, ms);
+						exec.invoke(reqObj, br, os, this);
 					} else {
 						throw new InvalidRequestException(request);
 					}

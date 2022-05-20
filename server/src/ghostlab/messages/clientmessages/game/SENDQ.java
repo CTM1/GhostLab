@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import ghostlab.GameServer;
+import ghostlab.Logger;
 import ghostlab.Player;
 import ghostlab.messages.clientmessages.GameMessage;
 
@@ -17,10 +18,14 @@ public class SENDQ implements GameMessage {
     String id = "";
     String msg = "";
 
+    Logger.log("AAA");
+
     for (int i = 0; i < 8; i++) {
       id += (char) br.read();
     } // read ID
     br.read(); // space
+
+    Logger.log("BBB");
 
     int nread = 0;
     int nasterisk = 0;
@@ -38,6 +43,9 @@ public class SENDQ implements GameMessage {
       msg += c;
     }
 
+    Logger.log("CCC\n");
+    Logger.log("Whisper to "+id+": "+msg+"\n");
+
     return new SENDQ(id, msg);
   }
 
@@ -49,8 +57,10 @@ public class SENDQ implements GameMessage {
   public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os) throws IOException {
     if (gs.sendMessage(p.getPlayerID(), getID(), getMessage())) {
       os.write("SEND!***".getBytes());
+      Logger.log("SEND!***");
     } else {
       os.write("NSEND***".getBytes());
+      Logger.log("NSEND***");
     }
     os.flush();
   }

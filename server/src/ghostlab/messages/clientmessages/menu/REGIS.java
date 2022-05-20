@@ -56,8 +56,7 @@ public class REGIS implements MenuMessage {
         return new REGIS(playerID, port, gID);
     }
 
-    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
+    public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws Exception {
                 REGNO regno = new REGNO();
 
                 
@@ -66,19 +65,19 @@ public class REGIS implements MenuMessage {
                 int regID = Byte.toUnsignedInt(regGameID);
                 System.out.println(regID);
 
-                if (gameServers[regID] == null) {
+                if (ch.ms.getGameServers()[regID] == null) {
                     throw new InvalidRequestException("Game " + regID + " does not exist.");
                 }
-                if (gameServers[regID].hasStarted()) {
+                if (ch.ms.getGameServers()[regID].hasStarted()) {
                     throw new InvalidRequestException(
                             "Game " + regID + " is ongoing. Can't join right now.");
                 } else {
-                    if (gameServers[regID].joinGame(this, client)) {
-                        currPlayerID[0] = this.getPlayerID();
+                    if (ch.ms.getGameServers()[regID].joinGame(this, ch.socket)) {
+                        ch.currPlayerID[0] = this.getPlayerID();
                         REGOK replyRegis = new REGOK((byte) (this.getGameID()));
                         replyRegis.send(os);
-                        currentLobby[0] = (byte) regID;
-                        currPlayerID[0] = this.getPlayerID();
+                        ch.currentLobby[0] = (byte) regID;
+                        ch.currPlayerID[0] = this.getPlayerID();
                     } else {
                         regno.send(os);
                     }

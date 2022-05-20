@@ -230,7 +230,7 @@ void *player_refresh(void *arg) {
         }
         refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
         pthread_mutex_unlock(&lock);
-        usleep(2000000);
+        usleep(500000);
         if(gameOver) {
             break;
         }
@@ -334,11 +334,22 @@ void handle_endga(int mcsock, char *request) {
     gameOver = 1;
     char player_id[9];
     char score_str[5];
-    memcpy(player_id, request+9, 8);
+    memcpy(player_id, request, 8);
     player_id[8] = 0;
-    memcpy(score_str, request, 4);
+    memcpy(score_str, request+9, 4);
     score_str[4] = 0;
     fprintf(stderr, "MULTICAST> ENDGA %s %s+++\n", player_id, score_str);
+
+    int row, col;
+    getmaxyx(stdscr, row, col);
+    WINDOW *win = newwin(row/2, col/2, row/4, col/4);
+    box(win, 0, 0);
+    mvwprintw(win, 2, 2, "GAME OVER!");
+    mvwprintw(win, 3, 2, "Winner is %s with %s points!", player_id, score_str);
+    mvwprintw(win, 4, 2, "(press the enter key to quit)");
+    wrefresh(win);
+    while(getch() != 10);
+    delwin(win);
 }
 
 void handle_multicast_requests(int mcsock, glist *gl, game_windows *gmw) {
@@ -564,6 +575,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
 
     free_and_quit:
     pthread_cancel(player_refresh_thread);
+    pthread_mutex_unlock(&lock);
     free(prta);
     free(gl->pos_scores);
     free(gl->usernames);
@@ -583,11 +595,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     free(ghost_grid);
     free(pos);
     free(prevpos);
-
-    if (!gameOver) {
-        close(sock);
-        endwin();
-        exit(0);
-    }
-        
+    close(sock);
+    endwin();
+    exit(0);
 }

@@ -30,13 +30,12 @@ public class SIZEQ implements MenuMessage {
         return new SIZEQ(gID);
     }
 
-    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws IOException {
+    public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws IOException {
         DUNNO dunno = new DUNNO();
 
         
         Byte gIDreq = this.getGameID();
-        GameServer m = gameServers[Byte.toUnsignedInt(gIDreq)];
+        GameServer m = ch.ms.getGameServers()[Byte.toUnsignedInt(gIDreq)];
         if (m == null)
             dunno.send(os);
         else {

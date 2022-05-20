@@ -37,18 +37,17 @@ public class LISTQ implements MenuMessage {
         return ("LIST? " + this.gameID + "***");
     }
 
-    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws IOException {
+    public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws IOException {
         DUNNO dunno = new DUNNO();
 
         int gID = Byte.toUnsignedInt(this.getGameID());
 
-        if (gameServers[gID] == null)
+        if (ch.ms.getGameServers()[gID] == null)
             dunno.send(os);
         else {
-            LISTA listA = new LISTA(gameServers[gID]);
+            LISTA listA = new LISTA(ch.ms.getGameServers()[gID]);
             listA.send(os);
-            ArrayList<Player> lobby = gameServers[gID].getLobby();
+            ArrayList<Player> lobby = ch.ms.getGameServers()[gID].getLobby();
 
             for (Player p : lobby) {
                 PLAYR pmsg = new PLAYR(p);

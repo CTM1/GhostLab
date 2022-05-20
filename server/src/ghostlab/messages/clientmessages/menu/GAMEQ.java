@@ -20,12 +20,11 @@ public class GAMEQ implements MenuMessage {
     return new GAMEQ();
   }
 
-  public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-      String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
-    GAMEA gameA = new GAMEA(gameServers);
+  public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws Exception {
+    GAMEA gameA = new GAMEA(ch.ms.getGameServers());
     gameA.send(os);
 
-    for (GameServer gs : ms.getCurrentAvailableGames()) {
+    for (GameServer gs : ch.ms.getCurrentAvailableGames()) {
       OGAME game = new OGAME(gs);
       game.send(os);
     }

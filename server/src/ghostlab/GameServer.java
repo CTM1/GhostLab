@@ -86,12 +86,12 @@ public class GameServer {
     InputStream inStream;
     OutputStream outStream;
     BufferedReader br;
-    // PrintWriter pw;
+    public boolean shouldQuit = false;
 
 
-    public PlayerHandler(Player p, GameServer daddy) {
+    public PlayerHandler(Player p, GameServer parentgs) {
       player = p;
-      this.parentgs = daddy;
+      this.parentgs = parentgs;
       try {
         inStream = player.TCPSocket.getInputStream();
         outStream = player.TCPSocket.getOutputStream();
@@ -117,11 +117,7 @@ public class GameServer {
         try {
           for (int i = 0; i < 5; i++) {
             try {
-              // while(!br.ready()) {
-              //   if (parentgs.isOver())
-              //     break;
-              // }
-                request += (char) (br.read());
+              request += (char) (br.read());
                 
             } catch (SocketException e) {
               break;
@@ -139,6 +135,8 @@ public class GameServer {
 
 						Object reqObj = parse.invoke(null, br);
 						exec.invoke(reqObj, this, parentgs, player, outStream);
+            if (shouldQuit)
+              break;
           } else {
             outStream.write("GOBYE!***".getBytes());
             outStream.flush();
@@ -264,8 +262,14 @@ public class GameServer {
     }
     multicast.ENDGA(id, maxScore);
     
-    
-    notifyAll();
+    for (Player p : lobby) {
+      try {
+        p.TCPSocket.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    // notifyAll();
     
   }
 
@@ -329,7 +333,7 @@ public class GameServer {
     }
   }
 
-  public synchronized boolean sendMessage(String from, String to, String content) {
+  public boolean sendMessage(String from, String to, String content) {
     for (Player p : lobby) {
       if (p.getPlayerID().equals(to)) {
         p.propagateMessage(from, content);

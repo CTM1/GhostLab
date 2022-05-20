@@ -19,19 +19,18 @@ public class UNREG implements MenuMessage {
         return new UNREG();
     }
 
-    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws IOException {
+    public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws IOException {
         DUNNO dunno = new DUNNO();
-            if (currentLobby[0] == 0 && currPlayerID[0] == "")
+            if (ch.currentLobby[0] == 0 && ch.currPlayerID[0] == "")
                 dunno.send(os);
             else {
-                if (gameServers[currentLobby[0]].unregister(currPlayerID[0])) {
-                    UNROK unrok = new UNROK((Byte) currentLobby[0]);
+                if (ch.ms.getGameServers()[ch.currentLobby[0]].unregister(ch.currPlayerID[0])) {
+                    UNROK unrok = new UNROK((Byte) ch.currentLobby[0]);
                     unrok.send(os);
-                    if (gameServers[currentLobby[0]].getNbOfPlayers() == 0) {
-                        gameServers[currentLobby[0]] = null;
-                        currentLobby[0] = 0;
-                        currPlayerID[0] = "";
+                    if (ch.ms.getGameServers()[ch.currentLobby[0]].getNbOfPlayers() == 0) {
+                        ch.ms.getGameServers()[ch.currentLobby[0]] = null;
+                        ch.currentLobby[0] = 0;
+                        ch.currPlayerID[0] = "";
 
                     } else
                         dunno.send(os);

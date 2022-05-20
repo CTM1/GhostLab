@@ -22,6 +22,9 @@ public class IQUIT implements GameMessage {
         os.flush();
 
         //TODO : manage player removal from gameserver, stop playerhandler, close socket, etc
+        gs.getLobby().remove(p);
+        p.getTCPSocket().close();
+        ph.shouldQuit = true;
     }
 
 }

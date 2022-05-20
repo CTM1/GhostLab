@@ -54,21 +54,20 @@ public class NEWPL implements MenuMessage {
         return playerID;
     }
 
-    public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-            String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws Exception {
+    public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws Exception {
         REGNO regno = new REGNO();
-        if (Byte.toUnsignedInt(nbOfGames) >= 255) {
+        if (ch.ms.getCurrentAvailableGames().size() >= 255) {
                 throw new MaximumGameCapacityException();
         } else {
-            int id = ms.createNewGame(this, client);
+            int id = ch.ms.createNewGame(this, ch.socket);
 
             if (id == -1)
                 regno.send(os);
             else {
                 REGOK replyNewPl = new REGOK((byte) id);
                 replyNewPl.send(os);
-                currentLobby[0] = (byte) id;
-                currPlayerID[0] = this.getPlayerID();
+                ch.currentLobby[0] = (byte) id;
+                ch.currPlayerID[0] = this.getPlayerID();
             }
         }
     }
