@@ -1,6 +1,6 @@
 package ghostlab;
 
-import ghostlab.messages.clientmessages.*;
+import ghostlab.messages.clientmessages.menu.NEWPL;
 import ghostlab.messages.servermessages.*;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -108,8 +108,8 @@ public class MainServer {
 				BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, Socket client, MainServer ms)
 				throws IOException {
 			DUNNO dunno = new DUNNO();
-			String[] messages = { "UNREG", "SIZEQ", "SENDQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
-			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ"};
+			String[] messages = { "UNREG", "SIZEQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
+			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ"};
 
 			while (true) {
 				String request = "";
@@ -122,15 +122,14 @@ public class MainServer {
 
 					if (Arrays.asList(gameMessages).contains(request)) {
 						Logger.log("Ignoring game message.");
-						while (br.read() != '*') {
-							br.read();
-							br.read();
-						}
+						while (br.read() != '*');
+						br.read();
+						br.read();
 						continue;
 					}
 
 					if (Arrays.asList(messages).contains(request)) {
-						Class<?> c = Class.forName("ghostlab.messages.clientmessages." + request);
+						Class<?> c = Class.forName("ghostlab.messages.clientmessages.menu." + request);
 						Method parse = c.getMethod("parse", BufferedReader.class);
 						Method exec = c.getMethod("executeRequest", Byte.class, BufferedReader.class,
 								GameServer[].class, Byte[].class,

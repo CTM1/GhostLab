@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 
-public class GLIS extends ServerMessage {
+public class GLISA extends ServerMessage {
     private byte nbOfPlayers;
 
-    public GLIS(int nbOfPlayers) {
+    public GLISA(int nbOfPlayers) {
         this.nbOfPlayers = (byte)nbOfPlayers;
     }
 

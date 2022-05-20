@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +7,11 @@ import java.net.Socket;
 
 import ghostlab.GameServer;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.REGNO;
 import ghostlab.messages.servermessages.REGOK;
 
-public class NEWPL implements ClientMessage {
+public class NEWPL implements MenuMessage {
 
     private String playerID;
     private String port;

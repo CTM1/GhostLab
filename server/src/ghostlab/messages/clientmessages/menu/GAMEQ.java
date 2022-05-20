@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +7,11 @@ import java.net.Socket;
 
 import ghostlab.GameServer;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.GAMEA;
 import ghostlab.messages.servermessages.OGAME;
 
-public class GAMEQ implements ClientMessage {
+public class GAMEQ implements MenuMessage {
 
   public static GAMEQ parse(BufferedReader br) throws IOException {
     for (int i = 0; i < 3; i++)

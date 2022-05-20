@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +7,11 @@ import java.net.Socket;
 
 import ghostlab.GameServer;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.REGNO;
 import ghostlab.messages.servermessages.REGOK;
 
-public class REGIS implements ClientMessage {
+public class REGIS implements MenuMessage {
     private String playerID; // 8 chars or fuck off!
     private String port; // 4 chars or fuck off!
     private byte gameID;

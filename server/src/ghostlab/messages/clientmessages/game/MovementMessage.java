@@ -1,9 +1,9 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.game;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 
-public abstract class MovementMessage {
+public class MovementMessage {
   /** Used by movement message parsers to get the distance. Boilerplate code */
   public static int parseDistance(BufferedReader br) throws IOException {
     br.read(); // space

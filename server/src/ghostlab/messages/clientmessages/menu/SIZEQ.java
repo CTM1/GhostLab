@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,10 +7,11 @@ import java.net.Socket;
 
 import ghostlab.GameServer;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.DUNNO;
 import ghostlab.messages.servermessages.SIZEA;
 
-public class SIZEQ implements ClientMessage {
+public class SIZEQ implements MenuMessage {
     private Byte gameID;
 
     public SIZEQ(Byte gId) {

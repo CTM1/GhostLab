@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,8 +9,9 @@ import java.util.HashMap;
 import ghostlab.GameServer;
 import ghostlab.Logger;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 
-public class START implements ClientMessage {
+public class START implements MenuMessage {
 
   static class InvalidRequestException extends Exception {
 		public InvalidRequestException(String string) {
