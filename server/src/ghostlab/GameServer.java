@@ -109,7 +109,7 @@ public class GameServer {
     }
 
     private void handleRequests() throws IOException {
-      String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ"};
+      String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
 
       while (!daddy.isOver()) {
         String request = "";
@@ -121,7 +121,7 @@ public class GameServer {
               break;
             }
           }
-          
+
           request = request.replace("?", "Q");
           Logger.log("Received "+request+"\n");
 
