@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class REGNO implements ServerMessage {
+public class REGNO extends ServerMessage {
     public String toString() {
         return ("REGNO***");
     }

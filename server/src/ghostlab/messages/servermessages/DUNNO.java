@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class DUNNO implements ServerMessage {
+public class DUNNO extends ServerMessage {
     public String toString() {
         return ("DUNNO***");
     }

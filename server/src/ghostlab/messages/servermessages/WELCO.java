@@ -3,7 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class WELCO implements ServerMessage {
+public class WELCO extends ServerMessage {
   String cnt;
   byte m;
   char h;
