@@ -212,6 +212,7 @@ void *player_refresh(void *arg) {
         if (r != 0)
             break;
             
+        wclear(prta->gmw->playerlistwindow);
         for(int i=0; i<prta->gl->nplayers; i++) {    
             int x = prta->gl->pos_scores[i]->x;
             int y = prta->gl->pos_scores[i]->y;
@@ -229,7 +230,7 @@ void *player_refresh(void *arg) {
         }
         refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
         pthread_mutex_unlock(&lock);
-        usleep(500000);
+        usleep(2000000);
         if(gameOver) {
             break;
         }
@@ -440,10 +441,13 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         }
     }
 
+    fprintf(stderr, "[*] NANANANANAN\n");
+
 
     position_score *prevpos = malloc(sizeof(position_score));
     position_score *pos = malloc(sizeof(position_score));
     pthread_mutex_lock(&lock);
+    fprintf(stderr, "[*] Posit\n");
     r = handle_posit(sock, pos);
     fprintf(stderr, "[*] handle_posit, r=%d (%d)\n", r, errno);
     pthread_mutex_unlock(&lock);

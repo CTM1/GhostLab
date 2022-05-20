@@ -81,8 +81,8 @@ public class GameServer {
   }
 
   public static class PlayerHandler extends Thread {
-    Player playa;
-    GameServer daddy;
+    Player player;
+    GameServer parentgs;
     InputStream inStream;
     OutputStream outStream;
     BufferedReader br;
@@ -90,11 +90,11 @@ public class GameServer {
 
 
     public PlayerHandler(Player p, GameServer daddy) {
-      playa = p;
-      this.daddy = daddy;
+      player = p;
+      this.parentgs = daddy;
       try {
-        inStream = playa.TCPSocket.getInputStream();
-        outStream = playa.TCPSocket.getOutputStream();
+        inStream = player.TCPSocket.getInputStream();
+        outStream = player.TCPSocket.getOutputStream();
         br = new BufferedReader(new InputStreamReader(inStream));
       } catch (Exception e) {
         Logger.log("Whoopsy");
@@ -112,12 +112,17 @@ public class GameServer {
     private void handleRequests() throws IOException {
       String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
 
-      while (!daddy.isOver()) {
+      while (!parentgs.isOver()) {
         String request = "";
         try {
           for (int i = 0; i < 5; i++) {
             try {
-              request += (char) (br.read());
+              // while(!br.ready()) {
+              //   if (parentgs.isOver())
+              //     break;
+              // }
+                request += (char) (br.read());
+                
             } catch (SocketException e) {
               break;
             }
@@ -133,16 +138,16 @@ public class GameServer {
                     Player.class, OutputStream.class);
 
 						Object reqObj = parse.invoke(null, br);
-						exec.invoke(reqObj, this, daddy, playa, outStream);
+						exec.invoke(reqObj, this, parentgs, player, outStream);
           } else {
             outStream.write("GOBYE!***".getBytes());
             outStream.flush();
-            daddy.endedPeacefully.put(playa.getTCPSocket(), false);
+            parentgs.endedPeacefully.put(player.getTCPSocket(), false);
             return;
           }
 
         } catch (Exception e) {
-          Logger.log("%d : Invalid message from player %s", daddy.getGameId(), playa.getPlayerID());
+          Logger.log("%d : Invalid message from player %s", parentgs.getGameId(), player.getPlayerID());
           e.printStackTrace();
           return;
         }
@@ -150,11 +155,11 @@ public class GameServer {
     }
 
     public synchronized void testMoveAndSendBackMOVEF(int direction, int distance) {
-      ArrayList<Ghost> realMFGs = daddy.getGhosts();
-      boolean[][] maze = daddy.labyrinth.getSurface();
+      ArrayList<Ghost> realMFGs = parentgs.getGhosts();
+      boolean[][] maze = parentgs.labyrinth.getSurface();
 
       int moved = 0; // distance traveled
-      int[] position = new int[] {playa.getX(), playa.getY()};
+      int[] position = new int[] {player.getX(), player.getY()};
       boolean metAGhost = false;
 
       while (!metAGhost && moved < distance) {
@@ -173,7 +178,7 @@ public class GameServer {
             break;
         }
 
-        if (!maze[position[1]][position[0]]) playa.setPos(position[0], position[1]);
+        if (!maze[position[1]][position[0]]) player.setPos(position[0], position[1]);
         else break;
 
         moved++;
@@ -186,15 +191,15 @@ public class GameServer {
 
             // update the lobby order to be highest first
             Collections.sort(
-                daddy.lobby, (p1, p2) -> ((Integer) p2.getScore()).compareTo(p1.getScore()));
+                parentgs.lobby, (p1, p2) -> ((Integer) p2.getScore()).compareTo(p1.getScore()));
 
             // update emit score
-            playa.addToScore(1);
-            daddy.multicast.SCORE(playa.getPlayerID(), playa.getScore(), position[0], position[1]);
+            player.addToScore(1);
+            parentgs.multicast.SCORE(player.getPlayerID(), player.getScore(), position[0], position[1]);
 
             // new position
             try {
-              (new MOVEF(playa)).send(outStream);
+              (new MOVEF(player)).send(outStream);
             } catch (Exception e) {
               Logger.log("Couldn't send message !");
               e.printStackTrace();
@@ -213,7 +218,7 @@ public class GameServer {
       // Send new position
       if (!metAGhost) {
         try {
-          (new MOVED(playa)).send(outStream);
+          (new MOVED(player)).send(outStream);
         } catch (Exception e) {
           Logger.log("Couldn't send message !");
           e.printStackTrace();
@@ -246,6 +251,7 @@ public class GameServer {
         this.over = true;
       }
     }
+    this.over = true;
 
     // find the winner
     String id = "";
@@ -257,13 +263,20 @@ public class GameServer {
       }
     }
     multicast.ENDGA(id, maxScore);
-    this.over = true;
+    
     
     notifyAll();
     
   }
 
   public void startGame() {
+    int[] emplacement;
+    for (int i = 0; i < lobby.size() * 2; i++) {
+      emplacement = labyrinth.emptyPlace();
+      Ghost g = new Ghost(emplacement[0], emplacement[1]);
+      ghosts.add(g);
+    }
+
     started = true;
     WELCO w =
         new WELCO(
@@ -286,12 +299,7 @@ public class GameServer {
       }
     }
 
-    int[] emplacement;
-    for (int i = 0; i < lobby.size() * 2; i++) {
-      emplacement = labyrinth.emptyPlace();
-      Ghost g = new Ghost(emplacement[0], emplacement[1]);
-      ghosts.add(g);
-    }
+    
 
     for (Player p : lobby) {
       emplacement = labyrinth.emptyPlace();

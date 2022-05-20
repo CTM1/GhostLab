@@ -311,10 +311,10 @@ int sendmov(int sock, char *move, int dist) {
 int get_move_response(int sock, position_score *pos) {
     pos->score = -1;
     char response[22];
-    if (recv_n_bytes(sock, response, 6) < 0)
+    if (recv_n_bytes(sock, response, 5) < 0)
         return -1;
-    if (!strncmp(response, "MOVE! ", 6)) {
-        if (recv_n_bytes(sock, response+6, 10) < 0)
+    if (!strncmp(response, "MOVE!", 5)) {
+        if (recv_n_bytes(sock, response+5, 11) < 0)
             return -1;
         fill_pos_from_payload(response, pos, 6, 10);
         char tmp[17];
@@ -322,13 +322,17 @@ int get_move_response(int sock, position_score *pos) {
         tmp[16] = 0;
         fprintf(stderr, "> %s\n", tmp);
         return 0;
-    } else if (!strncmp(response, "MOVEF ", 6)) {
-        if (recv_n_bytes(sock, response+6, 15) < 0)
+    } else if (!strncmp(response, "MOVEF", 5)) {
+        if (recv_n_bytes(sock, response+5, 16) < 0)
             return -1;
         fill_pos_from_payload(response, pos, 6, 10);
         fill_score_from_payload(response, pos, 14);
         response[21] = 0;
         fprintf(stderr, "> %s\n", response);
+        return 0;
+    } else if (!strncmp(response, "DUNNO", 5)) {
+        if (recv_n_bytes(sock, NULL, 3) < 0)
+            return -1;
         return 0;
     }
     return 1;

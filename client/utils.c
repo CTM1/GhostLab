@@ -27,14 +27,6 @@ void format_username(char *username) {
     username[8] = 0;
 }
 
-void format_port(char *port) {
-    for (int i=0; i<4; i++) {
-        if (port[i] == 0)
-            port[i] = '0';
-    }
-    port[4] = 0;
-}
-
 char logoline1[] = "  ________.__                    __  .____          ___.    ";
 char logoline2[] = " /  _____/|  |__   ____  _______/  |_|    |   _____ \\_ |__  ";
 char logoline3[] = "/   \\  ___|  |  \\ /  _ \\/  ___/\\   __\\    |   \\__  \\ | __ \\ ";

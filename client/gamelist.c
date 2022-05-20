@@ -81,7 +81,7 @@ void changeHighlight(struct gamelist_windows *gmw, int winselected, int gamesele
     }
 }
 
-void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port) {
+int askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port) {
     echo();
     curs_set(1);
     mvwprintw(gmw->buttonswindow, 5, 2, "Pseudo : ");
@@ -89,11 +89,17 @@ void askUsernameAndPort(struct gamelist_windows *gmw, char *username, char *port
     wmove(gmw->buttonswindow, 5, 11);
     wgetnstr(gmw->buttonswindow, username, 8);
     username[8] = 0;
+    if(strlen(username) < 2)
+        return -1;
     wmove(gmw->buttonswindow, 6, 11);
     wgetnstr(gmw->buttonswindow, port, 4);
     port[4] = 0;
+    if(strlen(port) < 4)
+        return -1;
     noecho();
     curs_set(0);
+    format_username(username);
+    return 0;
 }
 
 void refreshGameList(struct gamelist_windows *gmw, int sock, uint8_t *nbGames, bool *gamelistempty, game *gamelist, int row, int col) {
@@ -165,9 +171,7 @@ void gamelist(int sock, char *ip, char *port) {
                     char username[9];
                     char udpport[5];
                     memset(username, 0, 9);
-                    askUsernameAndPort(gmw, username, udpport);
-                    format_username(username);
-                    format_port(udpport);
+                    while (askUsernameAndPort(gmw, username, udpport) < 0);
                     send_regis(sock, username, udpport, gamelist[selectedGame].gameId);
                     char response[11];
                     int r;
@@ -213,9 +217,7 @@ void gamelist(int sock, char *ip, char *port) {
                         char username[9];
                         char udpport[5];
                         memset(username, 0, 9);
-                        askUsernameAndPort(gmw, username, udpport);
-                        format_username(username);
-                        format_port(udpport);
+                        while (askUsernameAndPort(gmw, username, udpport) < 0);
                         send_newpl(sock, username, udpport);
                         char response[11];
                         int r;
