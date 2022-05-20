@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.GameServer;
 
-public class LISTA implements ServerMessage {
+public class LISTA extends ServerMessage {
     private byte id;
     private byte nbOfPlayers;
 

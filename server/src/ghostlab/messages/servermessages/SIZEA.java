@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import ghostlab.GameServer;
 import ghostlab.LabyrInterface;
 
-public class SIZEA implements ServerMessage {
+public class SIZEA extends ServerMessage {
     private byte id;
     private char h;
     private char w;
@@ -24,7 +24,6 @@ public class SIZEA implements ServerMessage {
     }
 
     public void send(OutputStream os) throws IOException {
-        // System.out.println("Sending size "+this.h+"*"+this.w+" for game "+this.id);
         os.write("SIZE! ".getBytes());
         os.write(this.id);
         os.write(" ".getBytes());

@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.Player;
 
-public class MOVED implements ServerMessage {
+public class MOVED extends ServerMessage {
     private String content;
 
     public MOVED(Player p) {

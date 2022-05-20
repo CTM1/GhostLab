@@ -1,16 +1,18 @@
 package ghostlab;
 
-import ghostlab.messages.clientmessages.*;
+import ghostlab.messages.clientmessages.menu.REGIS;
 import ghostlab.messages.servermessages.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -77,7 +79,7 @@ public class GameServer {
         id, this.hostMulticastAddress.toString(), udpPort);
   }
 
-  private class PlayerHandler extends Thread {
+  public static class PlayerHandler extends Thread {
     Player playa;
     GameServer daddy;
     InputStream inStream;
@@ -107,8 +109,8 @@ public class GameServer {
     }
 
     private void handleRequests() throws IOException {
-      int direction;
-      int distance;
+      String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
+
       while (!daddy.isOver()) {
         String request = "";
         try {
@@ -120,83 +122,24 @@ public class GameServer {
             }
           }
 
+          request = request.replace("?", "Q");
+          Logger.log("Received "+request+"\n");
 
-          switch (request) {
-            case "UPMOV":
-              direction = 0;
-              distance = MovementMessage.parseDistance(br);
-              MovementMessage.getMsgTail(br);
-              testMoveAndSendBackMOVEF(direction, distance);
-              break;
+          if (Arrays.asList(gameMessages).contains(request)) {
+            Class<?> c = Class.forName("ghostlab.messages.clientmessages.game." + request);
+						Method parse = c.getMethod("parse", BufferedReader.class);
+						Method exec = c.getMethod("executeRequest", GameServer.PlayerHandler.class, GameServer.class,
+                    Player.class, OutputStream.class);
 
-            case "DOMOV":
-              direction = 1;
-              distance = MovementMessage.parseDistance(br);
-              MovementMessage.getMsgTail(br);
-              testMoveAndSendBackMOVEF(direction, distance);
-              break;
-
-            case "LEMOV":
-              direction = 2;
-              distance = MovementMessage.parseDistance(br);
-              MovementMessage.getMsgTail(br);
-              testMoveAndSendBackMOVEF(direction, distance);
-              break;
-
-            case "RIMOV":
-              direction = 3;
-              distance = MovementMessage.parseDistance(br);
-              MovementMessage.getMsgTail(br);
-              testMoveAndSendBackMOVEF(direction, distance);
-              break;
-
-            case "SEND?": // TODO
-              SENDQ info = SENDQ.parse(br);
-              if (daddy.sendMessage(playa.getPlayerID(), info.getID(), info.getMessage())) {
-                outStream.write("SEND!***".getBytes());
-              } else {
-                outStream.write("NSEND***".getBytes());
-              }
-              outStream.flush();
-              break;
-
-            case "GLIS?":
-              for (int i = 0; i < 3; i++) br.read(); // read end of message ***
-
-              (new GLIS(daddy.lobby.size())).send(outStream);
-
-              // send GPLYR
-              for (Player p : daddy.lobby) {
-                (new GPLYR(p)).send(outStream);
-              }
-
-              break;
-            case "MALL?": 
-              br.read();
-              char[] buff = new char[200];
-              int read = 0;
-              while (read <= 200) {
-                char c = (char) br.read();
-                if (c == '*') {
-                  br.read();
-                  br.read();
-                  break;
-                }
-                buff[read] = c;
-                read++;
-              }
-              Logger.log("Sending " + new String(buff) + " from " + playa.getPlayerID()+"\n");
-              daddy.multicast.MESSA(playa.getPlayerID(), new String(buff, 0, read));
-
-              outStream.write("MALL!***".getBytes());
-              outStream.flush();
-              break;
-            default:
-              outStream.write("GOBYE!***".getBytes());
-              outStream.flush();
-              endedPeacefully.put(playa.getTCPSocket(), false);
-              return;
+						Object reqObj = parse.invoke(null, br);
+						exec.invoke(reqObj, this, daddy, playa, outStream);
+          } else {
+            outStream.write("GOBYE!***".getBytes());
+            outStream.flush();
+            daddy.endedPeacefully.put(playa.getTCPSocket(), false);
+            return;
           }
+
         } catch (Exception e) {
           Logger.log("%d : Invalid message from player %s", daddy.getGameId(), playa.getPlayerID());
           e.printStackTrace();
@@ -205,7 +148,7 @@ public class GameServer {
       }
     }
 
-    private synchronized void testMoveAndSendBackMOVEF(int direction, int distance) {
+    public synchronized void testMoveAndSendBackMOVEF(int direction, int distance) {
       ArrayList<Ghost> realMFGs = daddy.getGhosts();
       boolean[][] maze = daddy.labyrinth.getSurface();
 
@@ -246,7 +189,7 @@ public class GameServer {
 
             // update emit score
             playa.addToScore(1);
-            multicast.SCORE(playa.getPlayerID(), playa.getScore(), position[0], position[1]);
+            daddy.multicast.SCORE(playa.getPlayerID(), playa.getScore(), position[0], position[1]);
 
             // new position
             try {
@@ -444,5 +387,9 @@ public class GameServer {
 
   public void addPlayerReady() {
     playersReady.add('a');
+  }
+
+  public MulticastGameServer getMulticast() {
+    return multicast;
   }
 }
