@@ -109,7 +109,7 @@ public class MainServer {
 				throws IOException {
 			DUNNO dunno = new DUNNO();
 			String[] messages = { "UNREG", "SIZEQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
-			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ"};
+			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
 
 			while (true) {
 				String request = "";
