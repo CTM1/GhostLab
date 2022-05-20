@@ -12,7 +12,7 @@ import ghostlab.messages.servermessages.*;
 
 public class UNREG implements MenuMessage {
 
-    public UNREG parse(BufferedReader br) throws IOException {
+    public static UNREG parse(BufferedReader br) throws IOException {
         for (int i = 0; i < 3; i++)
             br.read();
 
@@ -22,9 +22,6 @@ public class UNREG implements MenuMessage {
     public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
             String[] currPlayerID, OutputStream os, Socket client, MainServer ms) throws IOException {
         DUNNO dunno = new DUNNO();
-
-        for (int i = 0; i < 3; i++) {
-            br.read();
             if (currentLobby[0] == 0 && currPlayerID[0] == "")
                 dunno.send(os);
             else {
@@ -40,7 +37,6 @@ public class UNREG implements MenuMessage {
                         dunno.send(os);
                 }
             }
-        }
     }
 
     public String toString() {

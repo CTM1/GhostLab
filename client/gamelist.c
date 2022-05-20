@@ -182,6 +182,10 @@ void gamelist(int sock, char *ip, char *port) {
                         gmw = draw_gamelist_windows(row, col, ip, port);
                         send_games(sock);
                         nbGames = handle_games(sock);
+                        if (nbGames < 0) {
+                            endwin();
+                            exit(1);
+                        }
                         gamelistempty = false;
                         free(gamelist);
                         gamelist = malloc(sizeof(game) * nbGames);
@@ -226,6 +230,10 @@ void gamelist(int sock, char *ip, char *port) {
                             gmw = draw_gamelist_windows(row, col, ip, port);
                             send_games(sock);
                             nbGames = handle_games(sock);
+                            if (nbGames < 0) {
+                                endwin();
+                                exit(1);
+                            }
                             gamelistempty = false;
                             free(gamelist);
                             gamelist = malloc(sizeof(game) * nbGames);
