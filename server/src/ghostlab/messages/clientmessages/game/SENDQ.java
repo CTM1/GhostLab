@@ -1,14 +1,14 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.game;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 
 import ghostlab.GameServer;
-import ghostlab.MainServer;
+import ghostlab.Player;
+import ghostlab.messages.clientmessages.GameMessage;
 
-public class SENDQ implements ClientMessage {
+public class SENDQ implements GameMessage {
   private String id;
   private String message;
 
@@ -46,8 +46,13 @@ public class SENDQ implements ClientMessage {
     this.message = mess;
   }
 
-  public void executeRequest(Byte nbOfGames, BufferedReader br, GameServer[] gameServers, Byte[] currentLobby,
-      String[] currPlayerID, OutputStream os, Socket client, MainServer ms) {
+  public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os) throws IOException {
+    if (gs.sendMessage(p.getPlayerID(), getID(), getMessage())) {
+      os.write("SEND!***".getBytes());
+    } else {
+      os.write("NSEND***".getBytes());
+    }
+    os.flush();
   }
 
   public String getID() {

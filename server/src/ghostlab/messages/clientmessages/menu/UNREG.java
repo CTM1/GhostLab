@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,9 +7,10 @@ import java.net.Socket;
 
 import ghostlab.GameServer;
 import ghostlab.MainServer;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.*;
 
-public class UNREG implements ClientMessage {
+public class UNREG implements MenuMessage {
 
     public UNREG parse(BufferedReader br) throws IOException {
         for (int i = 0; i < 3; i++)

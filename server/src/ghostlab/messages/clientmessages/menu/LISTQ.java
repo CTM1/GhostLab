@@ -1,4 +1,4 @@
-package ghostlab.messages.clientmessages;
+package ghostlab.messages.clientmessages.menu;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,11 +9,12 @@ import java.util.ArrayList;
 import ghostlab.GameServer;
 import ghostlab.MainServer;
 import ghostlab.Player;
+import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.DUNNO;
 import ghostlab.messages.servermessages.LISTA;
 import ghostlab.messages.servermessages.PLAYR;
 
-public class LISTQ implements ClientMessage {
+public class LISTQ implements MenuMessage {
     private Byte gameID;
 
     public LISTQ(Byte gId) {
