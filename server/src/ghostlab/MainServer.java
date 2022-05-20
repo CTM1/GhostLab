@@ -125,6 +125,7 @@ public class MainServer {
 						while (br.read() != '*');
 						br.read();
 						br.read();
+						dunno.send(os);
 						continue;
 					}
 
