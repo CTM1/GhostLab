@@ -31,6 +31,8 @@ int handle_games(int sock) {
     if (strncmp("***", suffix, 3))
         return -1;
 
+    fprintf(stderr, "> GAMES [%d]***\n", nbGames);
+
     return nbGames;
 }
 
@@ -65,6 +67,8 @@ int handle_ogame(int sock, int nbGames, game garray[]) {
         if (strncmp("***", suffix, 3))
             die("ERR7", -1);
 
+        fprintf(stderr, "> OGAME [%d] [%d]***\n", id, nbPlayers);
+
         garray[i].gameId = id;
         garray[i].nbPlayers = nbPlayers;
     }
@@ -81,6 +85,7 @@ int send_newpl(int sock, char *username, char *udpport) {
         return -1; //TODO ERROR HANDLING
     if (send(sock, "***", 3, 0) < 0)
         return -1; //TODO ERROR HANDLING
+    fprintf(stderr, "< NEWPL %s %s***\n", username, udpport);
     return 0;
 }
 
@@ -97,6 +102,7 @@ int send_regis(int sock, char *username, char *udpport, uint8_t gameid) {
         return -1;
     if (send(sock, "***", 3, 0) < 0)
         return -1; //TODO ERROR HANDLING
+    fprintf(stderr, "< REGIS %s %s [%d]***\n", username, udpport, gameid);
     return 0;
 }
 
@@ -107,6 +113,8 @@ int getgamesize(int sock, uint8_t gamenumber, labsize *lbsize) {
         return -1; 
     if (send(sock, "***", 3, 0) < 0)
         return -1;
+
+    fprintf(stderr, "< SIZE? [%d]***\n", gamenumber);
     
     char response[16];
     if (recv_n_bytes(sock, response, 5) <= 0)
@@ -123,6 +131,9 @@ int getgamesize(int sock, uint8_t gamenumber, labsize *lbsize) {
     
     memcpy(&lbsize->height, response+8, 2);
     memcpy(&lbsize->width, response+11, 2);
+
+    fprintf(stderr, "> SIZE! [%d] [%d] [%d]***\n", gamenumber, lbsize->height, lbsize->width);
+
     // lbsize->height = be16toh(lbsize->height);
     // lbsize->width = be16toh(lbsize->width);
     // printw("SIZE! %d %x %x***", m, lbsize->height, lbsize->width);
@@ -137,6 +148,8 @@ int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl) {
     if (send(sock, "***", 3, 0) < 0)
         return -1;
 
+    fprintf(stderr, "< LIST? [%d]***\n", gamenumber);
+
     char response[12];
     if (recv_n_bytes(sock, response, 5) <= 0)
         return -1;
@@ -147,6 +160,7 @@ int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl) {
     if (recv_n_bytes(sock, response+5, 7) <= 0)
         return -1;
     uint8_t m = (uint8_t)response[6];
+    fprintf(stderr, "> LIST! [%d]***\n", m);
     if (m != gamenumber)
         return 2;
     pl->nplayers = (uint8_t)response[8];
@@ -161,17 +175,21 @@ int getplayerlist(int sock, uint8_t gamenumber, playerlist *pl) {
         pl->idList[i] = malloc(9);
         memcpy(pl->idList[i], playr+6, 8);
         pl->idList[i][8] = 0;
+        fprintf(stderr, "> PLAYR %s***\n", pl->idList[i]);
     }
     return 0;
 }
 
 int send_games(int sock) {
+    fprintf(stderr, "< GAME?***\n");
     return send(sock, "GAME?***", 8, 0);
 }
 
 int unreg(int sock, uint8_t gameId) {
     if (send(sock, "UNREG***", 8, 0) < 0)
         return -1;
+
+    fprintf(stderr, "< UNREG***\n");
 
     char response[10];
 
@@ -182,6 +200,7 @@ int unreg(int sock, uint8_t gameId) {
         if (recv_n_bytes(sock, response+6, 4) < 0)
             return -1;
         uint8_t receivedGameId = (uint8_t)response[6];
+        fprintf(stderr, "> UNROK [%d]***\n", receivedGameId);
         if (receivedGameId != gameId)
             return 1;
         return 0;
@@ -193,6 +212,7 @@ int unreg(int sock, uint8_t gameId) {
 
 int send_start(int sock) {
     return send(sock, "START***", 8, 0);
+    fprintf(stderr, "< START***\n");
 }
 
 int wait_welcome(int sock, welcome *w) {
@@ -203,20 +223,18 @@ int wait_welcome(int sock, welcome *w) {
         if (recv_n_bytes(sock, msg+6, 10) < 0)
             return -1;
         w->gameId = (uint8_t)msg[6];
-        // w->height = (uint8_t)msg[8];
-        // w->width = (uint8_t)msg[10];
         memcpy(&w->height, msg+8, 2);
         memcpy(&w->width, msg+11, 2);
         w->nbGhosts = (uint8_t)msg[14];
 
-        
-        recv_n_bytes(sock, w->ip, 16);
+        char recvip[16];
+        recv_n_bytes(sock, recvip, 16);
 
         for (int i = 0; i < 16; i++) {
-            if (w->ip[i] == '#' || w->ip[i] == ' ') {
+            if (recvip[i] == '#' || recvip[i] == ' ') {
                 w->ip[i] = '\0';
                 break;
-            }
+            } else w->ip[i] = recvip[i];
         }
 
         char port[5];
@@ -232,6 +250,8 @@ int wait_welcome(int sock, welcome *w) {
         printf("%s\n",tail);
         if (strncmp(tail, "***", 3))
             return 2;
+
+        fprintf(stderr, "> WELCO [%d] [%d] [%d] [%d] %s%s***\n", w->gameId, w->height, w->width, w->nbGhosts, recvip, port);
         return 0;
     }
     return 1;
@@ -262,7 +282,7 @@ void fill_score_from_payload(char *payload, position_score *pos, int scorestarti
 
 int handle_posit(int sock, position_score *pos) {
     pos->score = -1;
-    char msg[25];
+    char msg[26];
     if (recv_n_bytes(sock, msg, 6) < 0)
         return -1;
     if (!strncmp(msg, "POSIT ", 6)) {
@@ -271,6 +291,8 @@ int handle_posit(int sock, position_score *pos) {
             return -1;
         fill_pos_from_payload(msg, pos, 15, 19);
         // fprintf(stderr, "x=%d, y=%d\n", pos->x, pos->y);
+        msg[25] = 0;
+        fprintf(stderr, "> %s\n", msg);
         return 0;
     }
     return 1;
@@ -281,24 +303,31 @@ int sendmov(int sock, char *move, int dist) {
     sprintf(request, "%s %03d***", move, dist);
     if (send(sock, request, 12, 0) < 0)
         return -1;
+    fprintf(stderr, "< %s\n", request);
     return 0;
 };
 
 int get_move_response(int sock, position_score *pos) {
     pos->score = -1;
-    char response[21];
+    char response[22];
     if (recv_n_bytes(sock, response, 6) < 0)
         return -1;
     if (!strncmp(response, "MOVE! ", 6)) {
         if (recv_n_bytes(sock, response+6, 10) < 0)
             return -1;
         fill_pos_from_payload(response, pos, 6, 10);
+        char tmp[17];
+        memcpy(tmp, response, 16);
+        tmp[16] = 0;
+        fprintf(stderr, "> %s\n", tmp);
         return 0;
     } else if (!strncmp(response, "MOVEF ", 6)) {
         if (recv_n_bytes(sock, response+6, 15) < 0)
             return -1;
         fill_pos_from_payload(response, pos, 6, 10);
         fill_score_from_payload(response, pos, 14);
+        response[21] = 0;
+        fprintf(stderr, "> %s\n", response);
         return 0;
     }
     return 1;
@@ -307,30 +336,35 @@ int get_move_response(int sock, position_score *pos) {
 int iquit(int sock) {
     if (send(sock, "IQUIT***", 8, 0) < 0)
         return -1;
+    fprintf(stderr, "< IQUIT***\n");
     char response[8];
     if (recv_n_bytes(sock, response, 8) < 0)
         return -1;
-    if (!strncmp(response, "GOBYE***", 8))
-        return 0;
-    return 1;
+    if (strncmp(response, "GOBYE***", 8))
+        return 1;
+    fprintf(stderr, "> GOBYE***\n");
+    return 0;
 }
 
 int get_glist(int sock, glist *glist) {
     if (send(sock, "GLIS?***", 8, 0) < 0)
         return -1;
+    fprintf(stderr, "< GLIS?***\n");
     char response[10];
     if (recv_n_bytes(sock, response, 10) < 0)
         return -1;
     if (strncmp(response, "GLIS!", 5))
         return 2;
     uint8_t nbPlayers = (uint8_t)response[6];
+    fprintf(stderr, "> GLIS! [%d]***\n", nbPlayers);
     glist->nplayers = nbPlayers;
     glist->usernames = malloc(nbPlayers * sizeof(char*));
     glist->pos_scores = malloc(nbPlayers * sizeof(position_score*));
-    char gplyr_msg[30];
+    char gplyr_msg[31];
     for (int i=0; i<nbPlayers; i++) {
         if (recv_n_bytes(sock, gplyr_msg, 30) < 0)
             return -1;
+        gplyr_msg[30] = 0;
         if (strncmp(gplyr_msg, "GPLYR ", 6))
             return 1;
         glist->usernames[i] = malloc(9);
@@ -340,31 +374,40 @@ int get_glist(int sock, glist *glist) {
         glist->pos_scores[i] = malloc(sizeof(position_score));
         fill_pos_from_payload(gplyr_msg, glist->pos_scores[i], 15, 19);
         fill_score_from_payload(gplyr_msg, glist->pos_scores[i], 23);
+        fprintf(stderr, "> %s\n", gplyr_msg);
     }
     return 0;
 }
 
 int send_mall(int sock, char *msg, int msglength) {
-    char request[9+msglength];
+    char request[9+msglength+1];
     sprintf(request, "MALL? %s***", msg);
     if (send(sock, request, 9+msglength, 0) < 0)
         return -1;
-    char response[8];
+    request[9+msglength] = 0;
+    fprintf(stderr, "< %s\n", request);
+    char response[9];
     if (recv_n_bytes(sock, response, 8) < 0)
         return -1;
     if (strncmp(response, "MALL!***", 8))
         return 1;
+    response[8] = 0;
+    fprintf(stderr, "> %s\n", response);
     return 0;
 }
 
 int private_msg(int sock, char *playerid, char *msg, int msglength) {
-    char request[18+msglength];
+    char request[18+msglength+1];
     sprintf(request, "SEND? %s %s***", playerid, msg);
     if (send(sock, request, 18+msglength, 0) < 0)
         return -1;
-    char response[8];
+    request[18+msglength] = 0;
+    fprintf(stderr, "< %s\n", request);
+    char response[9];
     if (recv_n_bytes(sock, response, 8) < 0)
         return -1;
+    response[8] = 0;
+    fprintf(stderr, "> %s\n", response);
     if (!strncmp(response, "NSEND***", 8))
         return 2;
     if (strncmp(response, "SEND!***", 8))

@@ -20,7 +20,10 @@ runserver: server
 	@VERBOSE=true java -cp classes ghostlab.MainServer 1337
 
 runclient: client
-	@bin/client
+	@bin/client 2>/dev/null
+
+runclientverbose: client
+	@bin/client 2>client.log
 
 testlab: server
 	@java -cp classes ghostlab.LabTest

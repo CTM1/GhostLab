@@ -265,6 +265,8 @@ void handle_ghost(int mcsock, char *request) {
 
     int x = atoi(x_str);
     int y = atoi(y_str);
+
+    fprintf(stderr, "MULTICAST> GHOST %s %s+++\n", x_str, y_str);
     
     pthread_t *t = malloc(sizeof(pthread_t));
     hint_thread_args *hta = malloc(sizeof(hint_thread_args));
@@ -290,6 +292,8 @@ void handle_score(int mcsock, glist *gl, char *request) {
     x_str[3] = 0;
     memcpy(y_str, request+18, 3);
     y_str[3] = 0;
+
+    fprintf(stderr, "MULTICAST> SCORE %s %s %s %s+++\n", player_id, score_str, x_str, y_str);
 
     int score = atoi(score_str);
     int x = atoi(x_str);
@@ -319,6 +323,8 @@ void handle_messa(int mcsock, char *request, game_windows *gmw) {
         wprintw(gmw->chatwindow, "%c", request[c]);
         c++;
     } while (c <= 209 && !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
+    request[c+3] = 0;
+    fprintf(stderr, "MULTICAST> MESSA %s\n", request);
     wprintw(gmw->chatwindow, "\n");
     wrefresh(gmw->chatwindow);
 }
@@ -358,6 +364,8 @@ void handle_udp_requests(int udpsock, game_windows *gmw) {
                 wprintw(gmw->chatwindow, "%c", request[c]);
                 c++;
             } while (c <= 215 && !(request[c] == '+' && request[c+1] == '+' && request[c+2] == '+'));
+            request[c+3] = 0;
+            fprintf(stderr, "UDP> %s\n", request);
             wprintw(gmw->chatwindow, "\n");
             wrefresh(gmw->chatwindow);
         }
@@ -460,27 +468,7 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         if (gameOver) {
             clear();
             refresh();
-            pthread_cancel(player_refresh_thread);
-            free(prta);
-            free(gl->pos_scores);
-            free(gl->usernames);
-            free(gl);
-            delwin(gw->chatwindow);
-            delwin(gw->gamewindow);
-            delwin(gw->inputwindow);
-            delwin(gw->playerlistwindow);
-            free(gw);
-            for (int i=0; i<welco->height; i++) {
-                free(lab[i]);
-                free(player_grid[i]);
-                free(ghost_grid[i]);
-            }
-            free(lab);
-            free(player_grid);
-            free(ghost_grid);
-            free(pos);
-            free(prevpos);
-            return;
+            goto free_and_quit;
         }
             
             
@@ -544,10 +532,43 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
                 wclear(gw->inputwindow);
                 wrefresh(gw->inputwindow);
                 break;
-            case 'e':
+            case 'q':
+                pthread_mutex_lock(&lock);
+                iquit(sock);
+                pthread_mutex_unlock(&lock);
+                close(sock);
+                goto free_and_quit;
                 break;
         }
         refresh_lab_view(lab, gw, welco, pos, gwsizex, gwsizey);
     }
 
+
+    free_and_quit:
+    pthread_cancel(player_refresh_thread);
+    free(prta);
+    free(gl->pos_scores);
+    free(gl->usernames);
+    free(gl);
+    delwin(gw->chatwindow);
+    delwin(gw->gamewindow);
+    delwin(gw->inputwindow);
+    delwin(gw->playerlistwindow);
+    free(gw);
+    for (int i=0; i<welco->height; i++) {
+        free(lab[i]);
+        free(player_grid[i]);
+        free(ghost_grid[i]);
+    }
+    free(lab);
+    free(player_grid);
+    free(ghost_grid);
+    free(pos);
+    free(prevpos);
+
+    if (!gameOver) {
+        endwin();
+        exit(0);
+    }
+        
 }

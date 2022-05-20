@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -48,5 +49,7 @@ void format_username(char *username);
 void format_port(char *port);
 
 extern char *logolines[];
+
+extern FILE *logfile;
 
 #endif
