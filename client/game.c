@@ -162,35 +162,43 @@ void refresh_lab_view(int **lab, game_windows *gw, welcome *welco, position_scor
     wrefresh(gw->gamewindow);
 }
 
-//WARNING : ONLY WORKS FOR 1 LENGTH MOVEMENTS FOR NOW
-void refresh_lab_from_movement(int **lab, position_score *pos, position_score *prevpos, int movdir) {
+//WARNING : ONLY WORKS FOR 1 LENGTH MOVEMENTS
+void refresh_lab_from_movement(int **lab, position_score *pos, position_score *prevpos, welcome *lbsize, int movdir) {
     // fprintf(stderr, "Prev (%d, %d)\nNew (%d, %d)\nMove %d\n\n", prevpos->x, prevpos->y, pos->x, pos->y, movdir);
     if (prevpos->x == pos->x && prevpos->y == pos->y) {
         switch (movdir) {
             case 0: //LEFT
+                if (pos->y - 1 < 0)
+                    return;
                 lab[pos->x][pos->y - 1] = 0;
                 break;
             case 1: //RIGHT
+                if (pos->y + 1 >= lbsize->width)
+                    return;
                 lab[pos->x][pos->y + 1] = 0;
                 break;
             case 2: //UP
+                if (pos->x - 1 < 0)
+                    return;
                 lab[pos->x-1][pos->y] = 0;
                 break;
             case 3: //DOWN
+                if (pos->x + 1 >= lbsize->height)
+                    return;
                 lab[pos->x+1][pos->y] = 0;
                 break;
         }
     }
 }
 
-void do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos) {
+void do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos, welcome *lbsize) {
     pthread_mutex_lock(&lock);
     sendmov(sock, movetype, 1);
     memcpy(prevpos, pos, sizeof(position_score));
     int r = get_move_response(sock, pos);
     pthread_mutex_unlock(&lock);
     if (r == 0)
-        refresh_lab_from_movement(lab, pos, prevpos, movedir);
+        refresh_lab_from_movement(lab, pos, prevpos, lbsize, movedir);
 }
 
 void clear_player_grid(welcome *welco) {
@@ -508,16 +516,16 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         int key = getch();
         switch (key) {
             case KEY_LEFT:
-                do_move(sock, "LEMOV", 0, lab, pos, prevpos);
+                do_move(sock, "LEMOV", 0, lab, pos, prevpos, welco);
                 break;
             case KEY_RIGHT:
-                do_move(sock, "RIMOV", 1, lab, pos, prevpos);
+                do_move(sock, "RIMOV", 1, lab, pos, prevpos, welco);
                 break;
             case KEY_UP:
-                do_move(sock, "UPMOV", 2, lab, pos, prevpos);
+                do_move(sock, "UPMOV", 2, lab, pos, prevpos, welco);
                 break;
             case KEY_DOWN:
-                do_move(sock, "DOMOV", 3, lab, pos, prevpos);
+                do_move(sock, "DOMOV", 3, lab, pos, prevpos, welco);
                 break;
         }
         char msg[201];
