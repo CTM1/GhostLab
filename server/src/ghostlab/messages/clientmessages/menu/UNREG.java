@@ -3,9 +3,7 @@ package ghostlab.messages.clientmessages.menu;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 
-import ghostlab.GameServer;
 import ghostlab.Logger;
 import ghostlab.MainServer;
 import ghostlab.messages.clientmessages.MenuMessage;
