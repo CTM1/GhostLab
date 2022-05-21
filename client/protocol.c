@@ -31,7 +31,6 @@ int handle_games(int sock) {
         return -1;
     if (strncmp("***", suffix, 3))
         return -1;
-
     fprintf(stderr, "> GAMES [%d]***\n", nbGames);
 
     return nbGames;
@@ -331,7 +330,7 @@ int get_move_response(int sock, position_score *pos) {
         fprintf(stderr, "> %s\n", response);
         return 0;
     } else if (!strncmp(response, "DUNNO", 5)) {
-        if (recv_n_bytes(sock, NULL, 3) < 0)
+        if (recv_n_bytes(sock, response+5, 3) < 0)
             return -1;
         return 0;
     }

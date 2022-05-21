@@ -120,6 +120,23 @@ void refreshGameList(struct gamelist_windows *gmw, int sock, uint8_t *nbGames, b
     wrefresh(gmw->gameswindow);
 }
 
+void redraw_refresh(struct gamelist_windows **gmw, int row, int col, char *ip, char *port, int sock, uint8_t *nbGames, bool *gamelistempty, game *gamelist) {
+    erase();
+    refresh();
+    *gmw = draw_gamelist_windows(row, col, ip, port);
+    send_games(sock);
+    *nbGames = handle_games(sock);
+    fprintf(stderr, "got %d games\n", *nbGames);
+    if (*nbGames < 0) {
+        endwin();
+        exit(1);
+    }
+    *gamelistempty = false;
+    free(gamelist);
+    gamelist = malloc(sizeof(game) * (*nbGames));
+    refreshGameList(*gmw, sock, nbGames, gamelistempty, gamelist, row, col);
+}
+
 void gamelist(int sock, char *ip, char *port) {
     int row, col;
     getmaxyx(stdscr, row, col);
@@ -175,28 +192,21 @@ void gamelist(int sock, char *ip, char *port) {
                     send_regis(sock, username, udpport, gamelist[selectedGame].gameId);
                     char response[11];
                     int r;
-                    if ((r = recv_n_bytes(sock, response, 10)) < 0)
+                    if ((r = recv_n_bytes(sock, response, 6)) < 0)
                         return; //TODO ERROR HANDLING
-                    if (!strncmp(response, "REGOK ", 6)) {
+                    if (!strncmp(response, "REGOK", 5)) {
+                        recv_n_bytes(sock, response+6, 4);
                         uint8_t gameId;
                         gameId = (uint8_t)response[6];
+                        fprintf(stderr, "> REGOK [%d]***\n", gameId);
                         erase();
                         refresh();
                         lobby(sock, ip, port, gameId, username, atoi(udpport));
-                        gmw = draw_gamelist_windows(row, col, ip, port);
-                        send_games(sock);
-                        nbGames = handle_games(sock);
-                        if (nbGames < 0) {
-                            endwin();
-                            exit(1);
-                        }
-                        gamelistempty = false;
-                        free(gamelist);
-                        gamelist = malloc(sizeof(game) * nbGames);
-                        refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
-                    } else {
-                        printw("ERRORRRRWWWW");
+                    } else if (!strncmp(response, "REGNO", 5)) {
+                        recv_n_bytes(sock, response+6, 2);
+                        fprintf(stderr, "> REGNO***\n");
                     }
+                    redraw_refresh(&gmw, row, col, ip, port, sock, &nbGames, &gamelistempty, gamelist);
                 }
                 if (selectedWindow == 1) {
                     if (selectedButton == 0) {
@@ -226,23 +236,15 @@ void gamelist(int sock, char *ip, char *port) {
                         if (!strncmp(response, "REGOK ", 6)) {
                             uint8_t gameId;
                             gameId = (uint8_t)response[6];
+                            fprintf(stderr, "> REGOK [%d]***\n", gameId);
                             erase();
                             refresh();
                             lobby(sock, ip, port, gameId, username, atoi(udpport));
-                            gmw = draw_gamelist_windows(row, col, ip, port);
-                            send_games(sock);
-                            nbGames = handle_games(sock);
-                            if (nbGames < 0) {
-                                endwin();
-                                exit(1);
-                            }
-                            gamelistempty = false;
-                            free(gamelist);
-                            gamelist = malloc(sizeof(game) * nbGames);
-                            refreshGameList(gmw, sock, &nbGames, &gamelistempty, gamelist, row, col);
-                        } else {
-                            printw("ERRORRRRWWWW");
+                        } else if (!strncmp(response, "REGNO", 5)) {
+                            recv_n_bytes(sock, response+6, 2);
+                            fprintf(stderr, "> REGNO***\n");
                         }
+                        redraw_refresh(&gmw, row, col, ip, port, sock, &nbGames, &gamelistempty, gamelist);
                     }
                 }
         }

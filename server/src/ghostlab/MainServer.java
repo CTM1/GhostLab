@@ -126,6 +126,7 @@ public class MainServer {
 						while (br.read() != '*');
 						br.read();
 						br.read();
+						Logger.log("ccc");
 						dunno.send(os);
 						continue;
 					}
@@ -144,6 +145,7 @@ public class MainServer {
 				} catch (Exception e) {
 					Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
 					e.printStackTrace();
+					Logger.log("ddd");
 					dunno.send(os);
 					client.close();
 					Logger.log("Drop kicked them into space.\n\n");

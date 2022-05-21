@@ -187,9 +187,10 @@ void do_move(int sock, char *movetype, int movedir, int **lab, position_score *p
     pthread_mutex_lock(&lock);
     sendmov(sock, movetype, 1);
     memcpy(prevpos, pos, sizeof(position_score));
-    get_move_response(sock, pos);
+    int r = get_move_response(sock, pos);
     pthread_mutex_unlock(&lock);
-    refresh_lab_from_movement(lab, pos, prevpos, movedir);
+    if (r == 0)
+        refresh_lab_from_movement(lab, pos, prevpos, movedir);
 }
 
 void clear_player_grid(welcome *welco) {
@@ -402,6 +403,12 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     int gwsizey = row-4-4 - 2;
     int r;
 
+    struct timeval timeout;      
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout) < 0)
+        fprintf(stderr, "setsockopt failed\n");
+
     int mcsocket = socket(PF_INET, SOCK_DGRAM, 0);
     int udpsocket = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -452,15 +459,12 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
         }
     }
 
-    fprintf(stderr, "[*] NANANANANAN\n");
-
-
     position_score *prevpos = malloc(sizeof(position_score));
     position_score *pos = malloc(sizeof(position_score));
     pthread_mutex_lock(&lock);
-    fprintf(stderr, "[*] Posit\n");
+    // fprintf(stderr, "[*] Posit\n");
     r = handle_posit(sock, pos);
-    fprintf(stderr, "[*] handle_posit, r=%d (%d)\n", r, errno);
+    // fprintf(stderr, "[*] handle_posit, r=%d (%d)\n", r, errno);
     pthread_mutex_unlock(&lock);
     
     draw_game_windows_borders(row, col, connip, connport, welco->gameId);

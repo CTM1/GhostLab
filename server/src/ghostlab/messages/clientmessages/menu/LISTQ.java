@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import ghostlab.GameServer;
+import ghostlab.Logger;
 import ghostlab.MainServer;
 import ghostlab.Player;
 import ghostlab.messages.clientmessages.MenuMessage;
@@ -42,8 +43,11 @@ public class LISTQ implements MenuMessage {
 
         int gID = Byte.toUnsignedInt(this.getGameID());
 
-        if (ch.ms.getGameServers()[gID] == null)
+        if (ch.ms.getGameServers()[gID] == null) {
             dunno.send(os);
+            Logger.log("eee");
+        }
+            
         else {
             LISTA listA = new LISTA(ch.ms.getGameServers()[gID]);
             listA.send(os);

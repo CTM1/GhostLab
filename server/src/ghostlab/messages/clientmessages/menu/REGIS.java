@@ -66,11 +66,12 @@ public class REGIS implements MenuMessage {
                 System.out.println(regID);
 
                 if (ch.ms.getGameServers()[regID] == null) {
-                    throw new InvalidRequestException("Game " + regID + " does not exist.");
-                }
-                if (ch.ms.getGameServers()[regID].hasStarted()) {
-                    throw new InvalidRequestException(
-                            "Game " + regID + " is ongoing. Can't join right now.");
+                    // throw new InvalidRequestException("Game " + regID + " does not exist.");
+                    regno.send(os);
+                } else if (ch.ms.getGameServers()[regID].hasStarted()) {
+                    // throw new InvalidRequestException(
+                    //         "Game " + regID + " is ongoing. Can't join right now.");
+                    regno.send(os);
                 } else {
                     if (ch.ms.getGameServers()[regID].joinGame(this, ch.socket)) {
                         ch.currPlayerID[0] = this.getPlayerID();
