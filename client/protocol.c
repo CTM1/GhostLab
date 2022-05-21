@@ -351,18 +351,15 @@ int iquit(int sock) {
 }
 
 int get_glist(int sock, glist *glist) {
-    fprintf(stderr, "get_glistget_glistget_glistget_glist\n");
     if (send(sock, "GLIS?***", 8, 0) < 0)
         return -1;
     fprintf(stderr, "< GLIS?***\n");
     char response[10];
     int r = recv_n_bytes(sock, response, 10);
-    fprintf(stderr, "[*] get_glist, recv=%d (%d)\n", r, errno);
     if (r < 0)
         return -1;
     if (strncmp(response, "GLIS!", 5))
         return 2;
-    fprintf(stderr, "[*] get_glist, got GLIS!\n");
     uint8_t nbPlayers = (uint8_t)response[6];
     fprintf(stderr, "> GLIS! [%d]***\n", nbPlayers);
     glist->nplayers = nbPlayers;
