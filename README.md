@@ -45,7 +45,7 @@ Pour envoyer des messages au client, les classes implémentant ServerMessage ont
 
 Une fois une partie commencée, un thread `PlayerHandler` est assigné à chaque client par le `GameServer` correspondant à la partie. Celui ci parse les requêtes du client correspondant au jeu courant jusqu'à ce que celui-ci quitte ou la partie se finisse. Sa connection est ensuite terminée.
 
-Pour le multicast, une classe  `MulticastGameServer` s'occupe de communiquer aux clients d'une partie.
+Une classe  `MulticastGameServer` possède des fonctions pour envoyer les messages multidiffusés.
 
 
 ## Client

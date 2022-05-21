@@ -11,7 +11,7 @@ public class DUNNO extends ServerMessage {
   }
 
   public void send(OutputStream os) throws IOException {
-    Logger.verbose("< %s", this);
+    Logger.verbose("< %s\n", this);
     os.write("DUNNO***".getBytes());
     os.flush();
   }
