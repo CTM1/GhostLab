@@ -283,7 +283,7 @@ void handle_ghost(int mcsock, char *request) {
     hta->hint_char = '?';
     hta->x = x;
     hta->y = y;
-    hta->timeout = 3;
+    hta->timeout = 6;
     pthread_create(t, NULL, hint, (void*)hta);
     pthread_detach(*t);
     // fprintf(stderr, "> GHOST %s %s+++\n", x_str, y_str);
@@ -314,7 +314,7 @@ void handle_score(int mcsock, glist *gl, char *request) {
     hta->hint_char = '!';
     hta->x = x;
     hta->y = y;
-    hta->timeout = 3;
+    hta->timeout = 4;
     pthread_create(t, NULL, hint, (void*)hta);
     pthread_detach(*t);
     // fprintf(stderr, "> SCORE %s %s %s %s+++\n", player_id, score_str, x_str, y_str);
