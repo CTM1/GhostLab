@@ -291,7 +291,7 @@ public class GameServer {
 
   public void startGame() {
     int[] emplacement;
-    for (int i = 0; i < lobby.size() * 5; i++) {
+    for (int i = 0; i < lobby.size() * 3; i++) {
       emplacement = labyrinth.emptyPlace();
       Ghost g = new Ghost(emplacement[0], emplacement[1]);
       ghosts.add(g);

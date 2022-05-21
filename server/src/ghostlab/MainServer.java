@@ -150,7 +150,7 @@ public class MainServer {
             exec.invoke(reqObj, br, os, this);
 
             String res = (String) toString.invoke(reqObj);
-	    Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), res);
+	    	Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), res);
           } else {
             throw new InvalidRequestException(request);
           }
