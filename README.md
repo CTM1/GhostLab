@@ -21,7 +21,7 @@ Alternativement, on peut lancer le client manuellement après l'avoir compilé a
 # Utilisation du client
 
 L'utilisation est explicite jusqu'a arriver dans une partie. A ce moment là, les contrôles sont:
-- les flêches directionnelles pour se déplacer
+- les flèches directionnelles pour se déplacer
 - la touche m pour envoyer un message global
 - la touche p pour envoyer un message privé
 - la touche q pour quitter la partie
