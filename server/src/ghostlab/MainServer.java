@@ -123,7 +123,6 @@ public class MainServer {
           for (int i = 0; i < 5; i++) {
             request += (char) (br.read());
           }
-          Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), request);
           request = request.replace("?", "Q");
 
           if (Arrays.asList(gameMessages).contains(request)) {
@@ -151,7 +150,7 @@ public class MainServer {
             exec.invoke(reqObj, br, os, this);
 
             String res = (String) toString.invoke(reqObj);
-            Logger.verbose("< %s : %s\n", client, res);
+	    Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), res);
           } else {
             throw new InvalidRequestException(request);
           }
