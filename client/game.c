@@ -113,25 +113,25 @@ game_windows * draw_game_windows(int row, int col) {
 }
 
 char ** get_game_view(int **labyrinth, int labwidth, int labheight, int gwsizex, int gwsizey, int posx, int posy) {
-    char **ret = malloc(gwsizey * sizeof(char*));
-    for (int i=0; i<gwsizey; i++)
-        ret[i] = malloc(gwsizex+1 * sizeof(char));
+    char **ret = malloc(gwsizex * sizeof(char*));
+    for (int i=0; i<gwsizex; i++)
+        ret[i] = malloc(gwsizey+1 * sizeof(char));
     int gwcenterx = gwsizex/2;
     int gwcentery = gwsizey/2;
     int ci = 0;
     int cj = 0;
-    for(int y=0; y<gwsizey; y++) {
-        for (int x=0; x<gwsizex; x++) {
+    for(int x=0; x<gwsizex; x++) {
+        for (int y=0; y<gwsizey; y++) {
             int evalx = posx-gwcenterx+x;
             int evaly = posy-gwcentery+y;
             if (evalx == posx && evaly == posy) {
                 ret[cj][ci] = '@';
-            } else if (evalx >= 0 && evaly >= 0 && evalx < labwidth && evaly < labheight ) {
-                if (player_grid[evaly][evalx] != 0) 
-                    ret[cj][ci] = player_grid[evaly][evalx];
-                else if (ghost_grid[evaly][evalx] != 0) 
-                    ret[cj][ci] = ghost_grid[evaly][evalx];
-                else if (labyrinth[evaly][evalx])
+            } else if (evalx >= 0 && evaly >= 0 && evalx < labheight && evaly < labwidth ) {
+                if (player_grid[evalx][evaly] != 0) 
+                    ret[cj][ci] = player_grid[evalx][evaly];
+                else if (ghost_grid[evalx][evaly] != 0) 
+                    ret[cj][ci] = ghost_grid[evalx][evaly];
+                else if (labyrinth[evalx][evaly])
                     ret[cj][ci] = ' ';
                 else
                     ret[cj][ci] = '#';
@@ -155,10 +155,10 @@ void free_game_view(char **render, int height) {
 
 void refresh_lab_view(int **lab, game_windows *gw, welcome *welco, position_score *pos, int gwsizex, int gwsizey) {
     char **render = get_game_view(lab, welco->width, welco->height, gwsizex, gwsizey, pos->x, pos->y);
-    for(int i=0; i<gwsizey; i++) {
+    for(int i=0; i<gwsizex; i++) {
         mvwprintw(gw->gamewindow, i, 0, "%s", render[i]);
     }
-    free_game_view(render, gwsizey);
+    free_game_view(render, gwsizex);
     wrefresh(gw->gamewindow);
 }
 
@@ -168,16 +168,16 @@ void refresh_lab_from_movement(int **lab, position_score *pos, position_score *p
     if (prevpos->x == pos->x && prevpos->y == pos->y) {
         switch (movdir) {
             case 0: //LEFT
-                lab[pos->y][pos->x - 1] = 0;
+                lab[pos->x][pos->y - 1] = 0;
                 break;
             case 1: //RIGHT
-                lab[pos->y][pos->x + 1] = 0;
+                lab[pos->x][pos->y + 1] = 0;
                 break;
             case 2: //UP
-                lab[pos->y-1][pos->x] = 0;
+                lab[pos->x-1][pos->y] = 0;
                 break;
             case 3: //DOWN
-                lab[pos->y+1][pos->x] = 0;
+                lab[pos->x+1][pos->y] = 0;
                 break;
         }
     }
@@ -220,7 +220,7 @@ void *player_refresh(void *arg) {
             int score = prta->gl->pos_scores[i]->score;
             int is_player = !strncmp(prta->gl->usernames[i], prta->playerName, 8);
             if (!is_player)
-                player_grid[y][x] = prta->gl->usernames[i][0];
+                player_grid[x][y] = prta->gl->usernames[i][0];
             else
                 wattron(prta->gmw->playerlistwindow, A_BOLD);
             mvwprintw(prta->gmw->playerlistwindow, i, 0, "%s (%d,%d) : %d  ",
@@ -231,7 +231,7 @@ void *player_refresh(void *arg) {
         }
         refresh_lab_view(prta->lab, prta->gmw, prta->welco, prta->pos, prta->gwsizex, prta->gwsizey);
         pthread_mutex_unlock(&lock);
-        usleep(500000);
+        usleep(1000000);
         if(gameOver) {
             break;
         }
@@ -245,12 +245,12 @@ void *hint(void *arg) {
     hta = (hint_thread_args *)arg;
 
     pthread_mutex_lock(&lock);
-    ghost_grid[hta->y][hta->x] = hta->hint_char;
+    ghost_grid[hta->x][hta->y] = hta->hint_char;
     pthread_mutex_unlock(&lock);
     sleep(hta->timeout);
     pthread_mutex_lock(&lock);
-    if (ghost_grid[hta->y][hta->x] == hta->hint_char)
-        ghost_grid[hta->y][hta->x] = 0;
+    if (ghost_grid[hta->x][hta->y] == hta->hint_char)
+        ghost_grid[hta->x][hta->y] = 0;
     pthread_mutex_unlock(&lock);
     free(hta);
     return NULL;
@@ -399,8 +399,8 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
     gameOver = 0;
     int row, col;
     getmaxyx(stdscr, row, col);
-    int gwsizex = (2*col)/3 - 2;
-    int gwsizey = row-4-4 - 2;
+    int gwsizey = (2*col)/3 - 2;
+    int gwsizex = row-4-4 - 2;
     int r;
 
     struct timeval timeout;      

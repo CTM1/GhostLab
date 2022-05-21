@@ -34,7 +34,8 @@ public class UNREG implements MenuMessage {
                     ch.ms.getGameServers()[ch.currentLobby[0]] = null;
                     ch.currentLobby[0] = 0;
                     ch.currPlayerID[0] = "";
-
+                } else {
+                    ch.ms.getGameServers()[ch.currentLobby[0]].startTheGameIfAllReady();
                 }
             }
         }

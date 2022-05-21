@@ -110,9 +110,9 @@ public class RecursiveMaze implements LabyrInterface {
     public int[] emptyPlace() {
         int tries = 0;
         while(tries < (width*height)*2) {
-            int x = randInRange(0, width);
-            int y = randInRange(0, height);
-            if (!grid[y][x])
+            int y = randInRange(0, width);
+            int x = randInRange(0, height);
+            if (!grid[x][y])
                 return new int[]{x, y};
             tries++;
         }
