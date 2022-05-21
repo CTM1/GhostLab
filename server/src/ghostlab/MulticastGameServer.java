@@ -27,6 +27,8 @@ public class MulticastGameServer {
     byte[] content;
     DatagramPacket message;
 
+    Logger.verbose("MULTICAST> %s\n", mess);
+
     content = mess.getBytes();
     message = new DatagramPacket(content, content.length, groupeIP, port);
     socket.send(message);

@@ -16,185 +16,196 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MainServer {
-	static final int MAXGAMES = 256;
-	// Be careful when using this, bytes in Java are signed.
-	// Use Byte.toUnsignedInt(nbOfGames).
-	static Byte nbOfGames = 0x00;
-	static GameServer[] gameServers = new GameServer[MAXGAMES];
+  static final int MAXGAMES = 256;
+  // Be careful when using this, bytes in Java are signed.
+  // Use Byte.toUnsignedInt(nbOfGames).
+  static Byte nbOfGames = 0x00;
+  static GameServer[] gameServers = new GameServer[MAXGAMES];
 
-	static class MaximumGameCapacityException extends Exception {
-	}
+  static class MaximumGameCapacityException extends Exception {}
 
-	static class InvalidRequestException extends Exception {
-		public InvalidRequestException(String string) {
-			super(string);
-		}
-	}
+  static class InvalidRequestException extends Exception {
+    public InvalidRequestException(String string) {
+      super(string);
+    }
+  }
 
-	public static void main(String[] args) {
-		Logger.log("Starting up server...\n");
-		int port = Integer.parseInt(args[0]);
+  public static void main(String[] args) {
+    Logger.log("Starting up server...\n");
+    int port = Integer.parseInt(args[0]);
 
-		if (System.getenv("VERBOSE") != null) {
-			Logger.setVerbose(true);
-		}
-		Logger.verbose("Verbose activated\n");
+    if (System.getenv("VERBOSE") != null) {
+      Logger.setVerbose(true);
+    }
+    Logger.verbose("Verbose activated\n");
 
-		try {
-			ServerSocket socket = new ServerSocket(port);
-			Logger.verbose("Started on port %d\n", port);
+    try {
+      ServerSocket socket = new ServerSocket(port);
+      Logger.verbose("Started on port %d\n", port);
 
-			while (true) {
-				MainServer ms = new MainServer();
-				ms.acceptClient(socket);
-			}
+      while (true) {
+        MainServer ms = new MainServer();
+        ms.acceptClient(socket);
+      }
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
-	private void acceptClient(ServerSocket servsock) {
-		try {
-			Socket socket = servsock.accept();
-			Logger.log("Accepting " + socket + "\n");
-			ClientHandler ch = new ClientHandler(socket, this);
-			ch.start();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+  private void acceptClient(ServerSocket servsock) {
+    try {
+      Socket socket = servsock.accept();
+      Logger.log("Accepting " + socket + "\n");
+      ClientHandler ch = new ClientHandler(socket, this);
+      ch.start();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
-	public class ClientHandler extends Thread {
-		public Socket socket;
-		public MainServer ms;
-		public String[] currPlayerID = {""};
-		public Byte[] currentLobby = {0x00};
-		public boolean shouldStop = false;
+  public class ClientHandler extends Thread {
+    public Socket socket;
+    public MainServer ms;
+    public String[] currPlayerID = {""};
+    public Byte[] currentLobby = {0x00};
+    public boolean shouldStop = false;
 
-		public ClientHandler(Socket socket, MainServer ms) {
-			this.socket = socket;
-			this.ms = ms;
-		}
+    public ClientHandler(Socket socket, MainServer ms) {
+      this.socket = socket;
+      this.ms = ms;
+    }
 
-		public void run() {
-			try {
-				handleClient(socket, ms);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+    public void run() {
+      try {
+        handleClient(socket, ms);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
 
-		private void handleClient(Socket client, MainServer ms) throws IOException {
-			InputStream inStream = client.getInputStream();
-			OutputStream outStream = client.getOutputStream();
-			BufferedReader br = new BufferedReader(new InputStreamReader(inStream));
-			PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
-			Logger.log("Starting ClientHandler for " + client + "\n");
+    private void handleClient(Socket client, MainServer ms) throws IOException {
+      InputStream inStream = client.getInputStream();
+      OutputStream outStream = client.getOutputStream();
+      BufferedReader br = new BufferedReader(new InputStreamReader(inStream));
+      PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
+      Logger.log("Starting ClientHandler for " + client + "\n");
 
-			GAMES welcome = new GAMES((byte) getCurrentAvailableGames().size());
-			welcome.send(outStream);
+      GAMES welcome = new GAMES((byte) getCurrentAvailableGames().size());
+      welcome.send(outStream);
 
-			for (GameServer gs : getCurrentAvailableGames()) {
-				OGAME game = new OGAME(gs);
-				game.send(outStream);
-			}
+      for (GameServer gs : getCurrentAvailableGames()) {
+        OGAME game = new OGAME(gs);
+        game.send(outStream);
+      }
 
-			parseMainMenuRequests(br, pw, inStream, outStream, client, ms);
-		}
+      parseMainMenuRequests(br, pw, inStream, outStream, client, ms);
+    }
 
-		private void parseMainMenuRequests(
-				BufferedReader br, PrintWriter pw, InputStream is, OutputStream os, Socket client, MainServer ms)
-				throws IOException {
-			DUNNO dunno = new DUNNO();
-			String[] messages = { "UNREG", "SIZEQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
-			String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
+    private void parseMainMenuRequests(
+        BufferedReader br,
+        PrintWriter pw,
+        InputStream is,
+        OutputStream os,
+        Socket client,
+        MainServer ms)
+        throws IOException {
+      DUNNO dunno = new DUNNO();
+      String[] messages = {"UNREG", "SIZEQ", "LISTQ", "NEWPL", "REGIS", "GAMEQ", "START"};
+      String[] gameMessages = {
+        "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"
+      };
 
-			while (true) {
-				if (shouldStop)
-					break;
-				String request = "";
-				try {
-					for (int i = 0; i < 5; i++) {
-						request += (char) (br.read());
-					}
-					Logger.log("(MS) Received " + request + "\n");
-					request = request.replace("?", "Q");
+      while (true) {
+        if (shouldStop) break;
+        String request = "";
+        try {
+          for (int i = 0; i < 5; i++) {
+            request += (char) (br.read());
+          }
+          Logger.verbose("< (MS) %s : %s\n", client, request);
+          request = request.replace("?", "Q");
 
-					if (Arrays.asList(gameMessages).contains(request)) {
-						Logger.log("Ignoring game message.");
-						while (br.read() != '*');
-						br.read();
-						br.read();
-						Logger.log("ccc");
-						dunno.send(os);
-						continue;
-					}
+          if (Arrays.asList(gameMessages).contains(request)) {
+            Logger.log("Ignoring game message.");
+            while (br.read() != '*')
+              ;
+            br.read();
+            br.read();
+            dunno.send(os);
+            continue;
+          }
 
-					if (Arrays.asList(messages).contains(request)) {
-						Class<?> c = Class.forName("ghostlab.messages.clientmessages.menu." + request);
-						Method parse = c.getMethod("parse", BufferedReader.class);
-						Method exec = c.getMethod("executeRequest", BufferedReader.class, OutputStream.class, MainServer.ClientHandler.class);
+          if (Arrays.asList(messages).contains(request)) {
+            Class<?> c = Class.forName("ghostlab.messages.clientmessages.menu." + request);
+            Method parse = c.getMethod("parse", BufferedReader.class);
+            Method exec =
+                c.getMethod(
+                    "executeRequest",
+                    BufferedReader.class,
+                    OutputStream.class,
+                    MainServer.ClientHandler.class);
+            Method toString = c.getMethod("toString");
 
-						Object reqObj = parse.invoke(null, br);
-						exec.invoke(reqObj, br, os, this);
-					} else {
-						throw new InvalidRequestException(request);
-					}
+            Object reqObj = parse.invoke(null, br);
+            exec.invoke(reqObj, br, os, this);
 
-				} catch (Exception e) {
-					Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
-					e.printStackTrace();
-					Logger.log("ddd");
-					dunno.send(os);
-					client.close();
-					Logger.log("Drop kicked them into space.\n\n");
-					return;
-				}
-			}
-		}
-	}
+            String res = (String) toString.invoke(reqObj);
+            Logger.verbose("< %s : %s\n", client, res);
+          } else {
+            throw new InvalidRequestException(request);
+          }
 
-	private byte getAvailableGameID() {
-		byte id = 0;
+        } catch (Exception e) {
+          Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
+          // e.printStackTrace();
+          dunno.send(os);
+          client.close();
+          Logger.log("%s was dropped.\n\n", client);
+          return;
+        }
+      }
+    }
+  }
 
-		for (int i = 0; i < MAXGAMES; i++) {
-			if (gameServers[i] == null)
-				return (id);
-			id++;
-		}
+  private byte getAvailableGameID() {
+    byte id = 0;
 
-		return ((byte) -1);
-	}
+    for (int i = 0; i < MAXGAMES; i++) {
+      if (gameServers[i] == null) return (id);
+      id++;
+    }
 
-	public int createNewGame(NEWPL npl, Socket client) {
-		byte id = getAvailableGameID();
-		int index = Byte.toUnsignedInt(id);
+    return ((byte) -1);
+  }
 
-		// Creating new multicast address
-		if (id != -1) {
-			gameServers[index] = new GameServer(id, npl.getPort(), npl.getPlayerID(), client);
-			nbOfGames++;
-			return (id);
-		}
+  public int createNewGame(NEWPL npl, Socket client) {
+    byte id = getAvailableGameID();
+    int index = Byte.toUnsignedInt(id);
 
-		return (-1);
-	}
+    // Creating new multicast address
+    if (id != -1) {
+      gameServers[index] = new GameServer(id, npl.getPort(), npl.getPlayerID(), client);
+      nbOfGames++;
+      return (id);
+    }
 
-	public ArrayList<GameServer> getCurrentAvailableGames() {
-		ArrayList<GameServer> games = new ArrayList<GameServer>();
+    return (-1);
+  }
 
-		for (GameServer g : gameServers) {
-			if (g != null) {
-				if (!g.hasStarted())
-					games.add(g);
-			}
-		}
+  public ArrayList<GameServer> getCurrentAvailableGames() {
+    ArrayList<GameServer> games = new ArrayList<GameServer>();
 
-		return games;
-	}
+    for (GameServer g : gameServers) {
+      if (g != null) {
+        if (!g.hasStarted()) games.add(g);
+      }
+    }
 
-	public GameServer[] getGameServers() {
-		return gameServers;
-	}
+    return games;
+  }
+
+  public GameServer[] getGameServers() {
+    return gameServers;
+  }
 }

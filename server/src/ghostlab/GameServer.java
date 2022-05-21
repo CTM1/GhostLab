@@ -49,7 +49,7 @@ public class GameServer {
 
       // find port
       boolean foundPort = false;
-      
+
       do {
         udpPort = ThreadLocalRandom.current().nextInt(1000, 10000);
         foundPort = true;
@@ -75,7 +75,7 @@ public class GameServer {
 
     this.labyrinth = new RecursiveMaze(20, 20);
     this.ghosts = new ArrayList<Ghost>();
-    Logger.verbose(
+    Logger.log(
         "Started new game server %d, multicast on %s:%d\n",
         id, this.hostMulticastAddress.toString(), udpPort);
   }
@@ -87,7 +87,6 @@ public class GameServer {
     OutputStream outStream;
     BufferedReader br;
     public boolean shouldQuit = false;
-
 
     public PlayerHandler(Player p, GameServer parentgs) {
       player = p;
@@ -110,7 +109,9 @@ public class GameServer {
     }
 
     private void handleRequests() throws IOException {
-      String[] gameMessages = { "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"};
+      String[] gameMessages = {
+        "GLISQ", "RIMOV", "LEMOV", "UPMOV", "DOMOV", "MALLQ", "SENDQ", "IQUIT"
+      };
 
       while (!parentgs.isOver()) {
         String request = "";
@@ -118,25 +119,29 @@ public class GameServer {
           for (int i = 0; i < 5; i++) {
             try {
               request += (char) (br.read());
-                
+
             } catch (SocketException e) {
               break;
             }
           }
 
           request = request.replace("?", "Q");
-          Logger.log("(GS) Received "+request+"\n");
+          Logger.log("< " + player.toString() + ":" + request + "\n");
 
           if (Arrays.asList(gameMessages).contains(request)) {
             Class<?> c = Class.forName("ghostlab.messages.clientmessages.game." + request);
-						Method parse = c.getMethod("parse", BufferedReader.class);
-						Method exec = c.getMethod("executeRequest", GameServer.PlayerHandler.class, GameServer.class,
-                    Player.class, OutputStream.class);
+            Method parse = c.getMethod("parse", BufferedReader.class);
+            Method exec =
+                c.getMethod(
+                    "executeRequest",
+                    GameServer.PlayerHandler.class,
+                    GameServer.class,
+                    Player.class,
+                    OutputStream.class);
 
-						Object reqObj = parse.invoke(null, br);
-						exec.invoke(reqObj, this, parentgs, player, outStream);
-            if (shouldQuit)
-              break;
+            Object reqObj = parse.invoke(null, br);
+            exec.invoke(reqObj, this, parentgs, player, outStream);
+            if (shouldQuit) break;
           } else {
             outStream.write("GOBYE!***".getBytes());
             outStream.flush();
@@ -145,8 +150,9 @@ public class GameServer {
           }
 
         } catch (Exception e) {
-          Logger.log("%d : Invalid message from player %s", parentgs.getGameId(), player.getPlayerID());
-          e.printStackTrace();
+          Logger.log(
+              "%d : Invalid message from player %s", parentgs.getGameId(), player.getPlayerID());
+          // e.printStackTrace();
           return;
         }
       }
@@ -193,7 +199,8 @@ public class GameServer {
 
             // update emit score
             player.addToScore(1);
-            parentgs.multicast.SCORE(player.getPlayerID(), player.getScore(), position[0], position[1]);
+            parentgs.multicast.SCORE(
+                player.getPlayerID(), player.getScore(), position[0], position[1]);
 
             // new position
             try {
@@ -204,7 +211,7 @@ public class GameServer {
             }
 
             // remove ghost
-            Logger.log("Caught a ghost!"+"\n");
+            Logger.log("Caught a ghost!" + "\n");
             toRemove.add(g);
           }
         }
@@ -216,7 +223,9 @@ public class GameServer {
       // Send new position
       if (!metAGhost) {
         try {
-          (new MOVED(player)).send(outStream);
+          MOVED m = new MOVED(player);
+          Logger.verbose("> %s : %s\n", player, m);
+          m.send(outStream);
         } catch (Exception e) {
           Logger.log("Couldn't send message !");
           e.printStackTrace();
@@ -261,7 +270,7 @@ public class GameServer {
       }
     }
     multicast.ENDGA(id, maxScore);
-    
+
     for (Player p : lobby) {
       try {
         p.TCPSocket.close();
@@ -270,7 +279,7 @@ public class GameServer {
       }
     }
     // notifyAll();
-    
+
   }
 
   public void startGame() {
@@ -303,8 +312,6 @@ public class GameServer {
       }
     }
 
-    
-
     for (Player p : lobby) {
       emplacement = labyrinth.emptyPlace();
       p.setPos(emplacement[0], emplacement[1]);
@@ -323,7 +330,7 @@ public class GameServer {
   public class GameStarter extends Thread {
     @Override
     public void run() {
-        startGame();
+      startGame();
     }
   }
 
@@ -350,7 +357,7 @@ public class GameServer {
         Player p = new Player(this.lobby.size(), regis.getPlayerID(), regis.getPort(), TCPSocket);
         lobby.add(p);
         this.endedPeacefully.put(p.getTCPSocket(), true);
-        Logger.log("AAA "+endedPeacefully+"\n");
+        Logger.log("AAA " + endedPeacefully + "\n");
       } catch (SocketException e) {
         System.out.println(
             "Failed to register "

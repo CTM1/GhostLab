@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class DUNNO extends ServerMessage {
-    public String toString() {
-        return ("DUNNO***");
-    }
+  public String toString() {
+    return ("DUNNO***");
+  }
 
-    public void send(OutputStream os) throws IOException {
-        os.write("DUNNO***".getBytes());
-        os.flush();
-    }
+  public void send(OutputStream os) throws IOException {
+    os.write("DUNNO***".getBytes());
+    os.flush();
+  }
 }

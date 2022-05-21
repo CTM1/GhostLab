@@ -43,6 +43,10 @@ public class Player {
     }
   }
 
+  public String toString() {
+    return this.name;
+  }
+
   public String getPlayerID() {
     return (this.name);
   }
