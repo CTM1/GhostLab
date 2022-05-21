@@ -191,14 +191,15 @@ void refresh_lab_from_movement(int **lab, position_score *pos, position_score *p
     }
 }
 
-void do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos, welcome *lbsize) {
+int do_move(int sock, char *movetype, int movedir, int **lab, position_score *pos, position_score *prevpos, welcome *lbsize) {
     pthread_mutex_lock(&lock);
-    sendmov(sock, movetype, 1);
+    int r = sendmov(sock, movetype, 1);
     memcpy(prevpos, pos, sizeof(position_score));
-    int r = get_move_response(sock, pos);
+    r = get_move_response(sock, pos);
     pthread_mutex_unlock(&lock);
     if (r == 0)
         refresh_lab_from_movement(lab, pos, prevpos, lbsize, movedir);
+    return r;
 }
 
 void clear_player_grid(welcome *welco) {
@@ -514,20 +515,23 @@ void maingame(int sock, char *connip, char *connport, welcome *welco, char *plna
             
             
         int key = getch();
+        int r = 0;
         switch (key) {
             case KEY_LEFT:
-                do_move(sock, "LEMOV", 0, lab, pos, prevpos, welco);
+                r = do_move(sock, "LEMOV", 0, lab, pos, prevpos, welco);
                 break;
             case KEY_RIGHT:
-                do_move(sock, "RIMOV", 1, lab, pos, prevpos, welco);
+                r = do_move(sock, "RIMOV", 1, lab, pos, prevpos, welco);
                 break;
             case KEY_UP:
-                do_move(sock, "UPMOV", 2, lab, pos, prevpos, welco);
+                r = do_move(sock, "UPMOV", 2, lab, pos, prevpos, welco);
                 break;
             case KEY_DOWN:
-                do_move(sock, "DOMOV", 3, lab, pos, prevpos, welco);
+                r = do_move(sock, "DOMOV", 3, lab, pos, prevpos, welco);
                 break;
         }
+        if (r != 0)
+            continue;
         char msg[201];
         switch ((char)key) {
             case 'm':
