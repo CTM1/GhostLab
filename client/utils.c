@@ -22,7 +22,7 @@ int recv_n_bytes(int sock, void *buffer, int n) {
 void format_username(char *username) {
     for (int i=0; i<8; i++) {
         if (username[i] == 0)
-            username[i] = '_';
+            username[i] = '0';
     }
     username[8] = 0;
 }

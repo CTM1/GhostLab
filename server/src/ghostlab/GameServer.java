@@ -162,21 +162,21 @@ public class GameServer {
 
       while (!metAGhost && moved < distance) {
         switch (direction) {
-          case 0:
-            position[1]--;
-            break;
-          case 1:
-            position[1]++;
-            break;
-          case 2:
+          case 0: //  UP
             position[0]--;
             break;
-          case 3:
+          case 1: // DOWN
             position[0]++;
+            break;
+          case 2: // LEFT
+            position[1]--;
+            break;
+          case 3: // RIGHT
+            position[1]++;
             break;
         }
 
-        if (!maze[position[1]][position[0]]) player.setPos(position[0], position[1]);
+        if (!maze[position[0]][position[1]]) player.setPos(position[0], position[1]);
         else break;
 
         moved++;
@@ -234,11 +234,11 @@ public class GameServer {
     long lastGhostMove = System.currentTimeMillis();
     long timeNow;
     int[] epl;
-    while (ghosts.size() > 0) {
+    while (ghosts.size() > 0 && lobby.size() > 0) {
 
       try {
         timeNow = System.currentTimeMillis();
-        if (timeNow - lastGhostMove > 3 * 1000) {
+        if (timeNow - lastGhostMove > 5000) {
           lastGhostMove = timeNow;
           epl = labyrinth.emptyPlace();
           int index = (int) (Math.random() * ghosts.size());
@@ -270,12 +270,15 @@ public class GameServer {
       }
     }
     // notifyAll();
+    try {
+      MainServer.gameServers[this.id] = null;
+    } catch (Exception e) {}
     
   }
 
   public void startGame() {
     int[] emplacement;
-    for (int i = 0; i < lobby.size() * 2; i++) {
+    for (int i = 0; i < lobby.size() * 5; i++) {
       emplacement = labyrinth.emptyPlace();
       Ghost g = new Ghost(emplacement[0], emplacement[1]);
       ghosts.add(g);
