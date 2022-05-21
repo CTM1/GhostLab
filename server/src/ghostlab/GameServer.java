@@ -271,6 +271,12 @@ public class GameServer {
     }
     multicast.ENDGA(id, maxScore);
 
+    try {
+      Thread.sleep(2500);
+    } catch (InterruptedException e1) {
+      Logger.log("[-] Thread sleeping failed");
+    }
+
     for (Player p : lobby) {
       try {
         p.TCPSocket.close();
