@@ -14,6 +14,7 @@ Alternativement, on peut le lancer sur le port que l'on souhaite avec
 ## Client
 
 Également avec `make client` et `make runclient`. L'utilisateur pourra ensuite rentrer l'IP et le port du serveur dans l'interface graphique du terminal.
+
 > Le client écrit son mode verbose sur sa sortie `stderr`. Faire `make runclient` lance le client en redirigeant `stderr` vers `/dev/null`. Si on veut pouvoir consulter la sortie verbose, on peut faire `make runclientverbose` qui écrira `stderr` dans le fichier `client.log` dans le répertoire courant.
 
 Alternativement, on peut lancer le client manuellement après l'avoir compilé avec `bin/client 2>[nom du fichier ou rediriger le verbose]`
@@ -26,7 +27,7 @@ L'utilisation est explicite jusqu'a arriver dans une partie. A ce moment là, le
 - la touche p pour envoyer un message privé
 - la touche q pour quitter la partie
 
-Une fois la touche p pressée, l'interface demandera d'abord de tapper l'identifiant du joueur destinataire, puis le message.
+Une fois la touche p pressée, l'interface demandera d'abord de rentrer l'identifiant du joueur destinataire, puis le message.
 
 # Architecture
 
