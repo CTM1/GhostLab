@@ -15,6 +15,10 @@ public class RIMOV implements GameMessage {
         this.distance = dist;
     }
 
+    public String toString() {
+        return String.format("RIMOV %03d***", distance);
+    }
+
     public static RIMOV parse(BufferedReader br) throws IOException {
         int d = MovementMessage.parseDistance(br);
         MovementMessage.getMsgTail(br);

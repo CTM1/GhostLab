@@ -5,6 +5,7 @@ import java.io.OutputStream;
 
 import ghostlab.GameServer;
 import ghostlab.LabyrInterface;
+import ghostlab.Logger;
 
 public class SIZEA extends ServerMessage {
     private byte id;
@@ -19,11 +20,12 @@ public class SIZEA extends ServerMessage {
     }
 
     public String toString() {
-        return ("SIZE! " + this.id + " " +
-                this.h + " " + this.w + "***");
+        return ("SIZE! [" + Byte.toUnsignedInt(id) + "] [" +
+        (int)this.h + "] [" + (int)this.w + "]***");
     }
 
     public void send(OutputStream os) throws IOException {
+        Logger.verbose("< %s\n", this);
         os.write("SIZE! ".getBytes());
         os.write(this.id);
         os.write(" ".getBytes());

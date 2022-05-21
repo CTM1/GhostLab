@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import ghostlab.GameServer;
+import ghostlab.Logger;
 public class OGAME extends ServerMessage {
     private byte id;
     private byte nbOfPlayers;
@@ -14,10 +15,11 @@ public class OGAME extends ServerMessage {
     }
 
     public String toString() {
-        return ("OGAME " + id + " " + nbOfPlayers + "***");
+        return ("OGAME [" + Byte.toUnsignedInt(id) + "] [" + Byte.toUnsignedInt(nbOfPlayers) + "]***");
     }
 
     public void send(OutputStream os) throws IOException {
+        Logger.verbose("< %s\n", this);
         os.write("OGAME ".getBytes());
         os.write(this.id);
         os.write(" ".getBytes());

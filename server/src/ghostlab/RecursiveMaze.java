@@ -22,11 +22,9 @@ public class RecursiveMaze implements LabyrInterface {
         if (chamberSizeX == 2 && chamberSizeY == 2)
             return;
         if (chamberSizeX < 2 || chamberSizeY < 2) {
-            // System.out.println(String.format("Aborting (%d, %d) to (%d, %d)", startX, startY, endX, endY));
             return;
         }
             
-        // System.out.println(String.format("=============== (%d, %d) to (%d, %d)\n"+this, startX, startY, endX, endY));
         
         boolean horizontal;
         if (chamberSizeX < chamberSizeY)
@@ -38,12 +36,10 @@ public class RecursiveMaze implements LabyrInterface {
 
         boolean wallselected=false;
         if (horizontal) {
-            // System.out.println("Horizontal wall");
             int wallY = -1;
             int tries = 0;
             while (!wallselected) {
                 if (tries > 100*chamberSizeY) {
-                    // System.out.println(String.format("Couldn't find hwall for (%d, %d) to (%d, %d)", startX, startY, endX, endY));
                     return;
                 }
                     
@@ -54,18 +50,15 @@ public class RecursiveMaze implements LabyrInterface {
             }
                 
             int holeX = randInRange(startX, endX+1);
-            // System.out.println("Hole at x="+holeX);
             for(int i=0; i<chamberSizeX; i++)
                 grid[wallY][startX+i] = (startX+i != holeX);
             recursiveChamber(grid, startX, startY, endX, wallY-1);
             recursiveChamber(grid, startX, wallY+1, endX, endY);
         } else {
-            // System.out.println("Vertical wall");
             int wallX = -1;
             int tries = 0;
             while (!wallselected) {
                 if (tries > 100*chamberSizeX) {
-                    // System.out.println(String.format("Couldn't find vwall for (%d, %d) to (%d, %d)", startX, startY, endX, endY));
                     return;
                 }
                 wallX = randInRange(startX+1, endX);
@@ -74,7 +67,6 @@ public class RecursiveMaze implements LabyrInterface {
                 tries++;
             }
             int holeY = randInRange(startY, endY+1);
-            // System.out.println("Hole at y="+holeY);
             for(int i=0; i<chamberSizeY; i++)
                 grid[startY+i][wallX] = (startY+i != holeY);
             recursiveChamber(grid, startX, startY, wallX-1, endY);

@@ -3,6 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import ghostlab.Logger;
 import ghostlab.Player;
 
 public class MOVEF extends ServerMessage {
@@ -17,6 +18,7 @@ public class MOVEF extends ServerMessage {
     }
 
     public void send(OutputStream os) throws IOException {
+        Logger.verbose("< %s\n", this);
         os.write(content.getBytes());
         os.flush();
     }

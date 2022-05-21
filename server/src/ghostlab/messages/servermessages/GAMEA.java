@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import ghostlab.GameServer;
+import ghostlab.Logger;
 
 public class GAMEA extends ServerMessage {
     byte nbOfGames;
@@ -23,10 +24,11 @@ public class GAMEA extends ServerMessage {
     }
 
     public String toString() {
-        return ("GAMES " + Byte.toUnsignedInt(nbOfGames) + "***");
+        return ("GAMES [" + Byte.toUnsignedInt(nbOfGames) + "]***");
     }
 
     public void send(OutputStream os) throws IOException {
+        Logger.verbose("< %s\n", this);
         os.write("GAMES ".getBytes());
         os.write(this.nbOfGames);
         os.write("***".getBytes());

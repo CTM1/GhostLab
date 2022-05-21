@@ -15,6 +15,11 @@ public class LEMOV implements GameMessage {
         this.distance = dist;
     }
 
+    public String toString() {
+        return String.format("LEMOV %03d***", distance);
+    }
+
+
     public static LEMOV parse(BufferedReader br) throws IOException {
         int d = MovementMessage.parseDistance(br);
         MovementMessage.getMsgTail(br);

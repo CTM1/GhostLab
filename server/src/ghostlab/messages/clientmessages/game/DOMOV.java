@@ -21,9 +21,11 @@ public class DOMOV implements GameMessage {
     return new DOMOV(d);
   }
 
-  public void executeRequest(
-      GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os) {
-    Logger.verbose("> %s : MOVEF\n", p);
+  public String toString() {
+    return String.format("DOMOV %03d***", distance);
+  }
+
+  public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os) {
     ph.testMoveAndSendBackMOVEF(1, distance);
   }
 }

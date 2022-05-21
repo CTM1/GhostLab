@@ -62,20 +62,20 @@ public class GameServer {
       this.multicast = new MulticastGameServer(this.hostMulticastAddress, udpPort);
 
     } catch (Exception e) {
-      Logger.log("Couldn't get new multicast address for game %d", id);
+      Logger.log("[-] Couldn't get new multicast address for game %d\n", id);
       e.printStackTrace();
     }
 
     try {
       this.lobby.add(new Player(0, hostID, hostUDPport, hostTCPSocket));
     } catch (SocketException e) {
-      System.out.println("Failed to register " + hostID + " to game " + id + " at index 0");
+      Logger.log("[-] Failed to register " + hostID + " to game " + id + "\n");
     }
 
     this.labyrinth = new RecursiveMaze(20, 20);
     this.ghosts = new ArrayList<Ghost>();
     Logger.log(
-        "Started new game server %d, multicast on %s:%d\n",
+        "[*] Started new game server %d, multicast on %s:%d\n",
         id, this.hostMulticastAddress.toString(), udpPort);
   }
 
@@ -95,7 +95,7 @@ public class GameServer {
         outStream = player.TCPSocket.getOutputStream();
         br = new BufferedReader(new InputStreamReader(inStream));
       } catch (Exception e) {
-        Logger.log("Whoopsy");
+        Logger.log("[-] Error getting streams from socket\n");
       }
     }
 
@@ -125,7 +125,6 @@ public class GameServer {
           }
 
           request = request.replace("?", "Q");
-          Logger.log("< " + player.toString() + ":" + request + "\n");
 
           if (Arrays.asList(gameMessages).contains(request)) {
             Class<?> c = Class.forName("ghostlab.messages.clientmessages.game." + request);
@@ -137,8 +136,11 @@ public class GameServer {
                     GameServer.class,
                     Player.class,
                     OutputStream.class);
+            Method toString = c.getMethod("toString");
 
             Object reqObj = parse.invoke(null, br);
+            String res = (String) toString.invoke(reqObj);
+	    	    Logger.verbose("> (GS) (%s) : %s\n", player.name, res);
             exec.invoke(reqObj, this, parentgs, player, outStream);
             if (shouldQuit) break;
           } else {
@@ -150,7 +152,7 @@ public class GameServer {
 
         } catch (Exception e) {
           Logger.log(
-              "%d : Invalid message from player %s", parentgs.getGameId(), player.getPlayerID());
+              "[-] %d : Invalid message from player %s\n", parentgs.getGameId(), player.getPlayerID());
           // e.printStackTrace();
           return;
         }
@@ -205,12 +207,12 @@ public class GameServer {
             try {
               (new MOVEF(player)).send(outStream);
             } catch (Exception e) {
-              Logger.log("Couldn't send message !");
+              Logger.log("[-] Couldn't send message !\n");
               e.printStackTrace();
             }
 
             // remove ghost
-            Logger.log("Caught a ghost!" + "\n");
+            Logger.log("[!] Caught a ghost!\n");
             toRemove.add(g);
           }
         }
@@ -223,10 +225,10 @@ public class GameServer {
       if (!metAGhost) {
         try {
           MOVED m = new MOVED(player);
-          Logger.verbose("> %s : %s\n", player, m);
+          // Logger.verbose("> %s : %s\n", player, m);
           m.send(outStream);
         } catch (Exception e) {
-          Logger.log("Couldn't send message !");
+          Logger.log("[-] Couldn't send message !\n");
           e.printStackTrace();
         }
       }
@@ -273,7 +275,7 @@ public class GameServer {
     try {
       Thread.sleep(2500);
     } catch (InterruptedException e1) {
-      Logger.log("[-] Thread sleeping failed");
+      Logger.log("[-] Thread sleeping failed\n");
     }
 
     for (Player p : lobby) {
@@ -315,7 +317,7 @@ public class GameServer {
 
         w.send(handlers.get(p).getOutputStream());
       } catch (Exception e) {
-        Logger.verbose("fuk u");
+        e.printStackTrace();
       }
     }
 
@@ -326,7 +328,7 @@ public class GameServer {
         (new POSIT(p.getPlayerID(), emplacement[0], emplacement[1]))
             .send(handlers.get(p).getOutputStream());
       } catch (Exception e) {
-        Logger.log("Nop");
+        Logger.log("[-] Error sending POSIT\n");
       }
     }
 
@@ -364,15 +366,14 @@ public class GameServer {
         Player p = new Player(this.lobby.size(), regis.getPlayerID(), regis.getPort(), TCPSocket);
         lobby.add(p);
         this.endedPeacefully.put(p.getTCPSocket(), true);
-        Logger.log("AAA " + endedPeacefully + "\n");
       } catch (SocketException e) {
-        System.out.println(
-            "Failed to register "
+        Logger.log(
+            "[-] Failed to register "
                 + regis.getPlayerID()
                 + " to game "
                 + this.id
                 + " at index "
-                + this.lobby.size());
+                + this.lobby.size() + "\n");
       }
       return true;
     }

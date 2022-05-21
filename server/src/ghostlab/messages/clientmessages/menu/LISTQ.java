@@ -33,7 +33,7 @@ public class LISTQ implements MenuMessage {
     }
 
     public String toString() {
-        return ("LIST? " + this.gameID + "***");
+        return ("LIST? [" + this.gameID + "]***");
     }
 
     public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws IOException {
@@ -43,7 +43,6 @@ public class LISTQ implements MenuMessage {
 
         if (ch.ms.getGameServers()[gID] == null) {
             dunno.send(os);
-            Logger.log("eee");
         }
             
         else {
@@ -54,7 +53,6 @@ public class LISTQ implements MenuMessage {
             for (Player p : lobby) {
                 PLAYR pmsg = new PLAYR(p);
                 pmsg.send(os);
-                System.out.println(p.getPlayerID());
             }
         }
     }

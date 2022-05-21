@@ -3,6 +3,7 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import ghostlab.Logger;
 import ghostlab.Player;
 
 public class PLAYR extends ServerMessage {
@@ -17,6 +18,7 @@ public class PLAYR extends ServerMessage {
     }
 
     public void send(OutputStream os) throws IOException {
+        Logger.verbose("< %s\n", this);
         os.write("PLAYR ".getBytes());
         os.write(this.playerID.getBytes());
         os.write("***".getBytes());

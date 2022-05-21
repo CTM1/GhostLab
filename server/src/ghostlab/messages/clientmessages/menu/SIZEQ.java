@@ -44,7 +44,7 @@ public class SIZEQ implements MenuMessage {
     }
 
     public String toString() {
-        return ("SIZEQ " + this.gameID + "***");
+        return ("SIZE? [" + Byte.toString(gameID) + "]***");
     }
 
     public Byte getGameID() {

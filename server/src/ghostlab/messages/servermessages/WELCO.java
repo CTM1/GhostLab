@@ -3,6 +3,8 @@ package ghostlab.messages.servermessages;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import ghostlab.Logger;
+
 public class WELCO extends ServerMessage {
   String cnt;
   byte m;
@@ -50,5 +52,6 @@ public class WELCO extends ServerMessage {
     os.write(" ".getBytes());
     os.write(port.getBytes());
     os.write("***".getBytes());
+    Logger.verbose("< WELCO [%d] [%d] [%d] [%d] %s %s***\n", Byte.toUnsignedInt(m), (int)this.h, (int)this.w, Byte.toUnsignedInt(f), paddedIp, port);
   }
 }

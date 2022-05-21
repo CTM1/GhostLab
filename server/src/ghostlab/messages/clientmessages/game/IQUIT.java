@@ -16,10 +16,15 @@ public class IQUIT implements GameMessage {
         return new IQUIT();
     }
 
+    public String toString() {
+        return String.format("IQUIT***");
+    }
+
     public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os) throws IOException {
-        Logger.log("Got IQUIT from " + p.getPlayerID()+"\n");
+        Logger.log("[*] Got IQUIT from " + p.getPlayerID()+"\n");
         os.write("GOBYE***".getBytes());
         os.flush();
+        Logger.verbose("< GOBYE***\n");
 
         //TODO : manage player removal from gameserver, stop playerhandler, close socket, etc
         gs.getLobby().remove(p);

@@ -17,17 +17,21 @@ public class GLISQ implements GameMessage {
     return new GLISQ();
   }
 
+  public String toString() {
+    return "GLIS?***";
+  }
+
   public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os)
       throws IOException {
     GLISA gl = new GLISA(gs.getLobby().size());
-    Logger.verbose("> %s : %s\n", p, gl);
+    // Logger.verbose("> %s : %s\n", p, gl);
     gl.send(os);
 
     // send GPLYR
     GPLYR gp;
     for (Player pl : gs.getLobby()) {
       gp = new GPLYR(pl);
-      Logger.verbose("> %s : %s\n", p, gp);
+      // Logger.verbose("> %s : %s\n", p, gp);
       gp.send(os);
     }
   }

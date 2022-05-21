@@ -31,7 +31,7 @@ public class MainServer {
   }
 
   public static void main(String[] args) {
-    Logger.log("Starting up server...\n");
+    Logger.log("[*] Starting up server...\n");
     int port = Integer.parseInt(args[0]);
 
     if (System.getenv("VERBOSE") != null) {
@@ -56,7 +56,7 @@ public class MainServer {
   private void acceptClient(ServerSocket servsock) {
     try {
       Socket socket = servsock.accept();
-      Logger.log("Accepting " + socket + "\n");
+      Logger.log("[+] Accepting " + socket + "\n");
       ClientHandler ch = new ClientHandler(socket, this);
       ch.start();
     } catch (Exception e) {
@@ -89,7 +89,7 @@ public class MainServer {
       OutputStream outStream = client.getOutputStream();
       BufferedReader br = new BufferedReader(new InputStreamReader(inStream));
       PrintWriter pw = new PrintWriter(new OutputStreamWriter(outStream));
-      Logger.log("Starting ClientHandler for " + client + "\n");
+      Logger.log("[*] Starting ClientHandler for " + client + "\n");
 
       GAMES welcome = new GAMES((byte) getCurrentAvailableGames().size());
       welcome.send(outStream);
@@ -126,7 +126,7 @@ public class MainServer {
           request = request.replace("?", "Q");
 
           if (Arrays.asList(gameMessages).contains(request)) {
-            Logger.log("Ignoring game message.");
+            Logger.log("[!] Ignoring game message.\n");
             while (br.read() != '*')
               ;
             br.read();
@@ -147,20 +147,21 @@ public class MainServer {
             Method toString = c.getMethod("toString");
 
             Object reqObj = parse.invoke(null, br);
-            exec.invoke(reqObj, br, os, this);
 
             String res = (String) toString.invoke(reqObj);
-	    	Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), res);
+	    	    Logger.verbose("> (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), res);
+
+            exec.invoke(reqObj, br, os, this);
           } else {
             throw new InvalidRequestException(request);
           }
 
         } catch (Exception e) {
-          Logger.log("Received bad request " + request + " from: " + client.toString() + "\n");
+          Logger.log("[-] Received bad request " + request + " from: " + client.toString() + "\n");
           // e.printStackTrace();
           dunno.send(os);
           client.close();
-          Logger.log("%s was dropped.\n\n", client);
+          Logger.log("[*] %s was dropped.\n", client);
           return;
         }
       }

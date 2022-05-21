@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import ghostlab.Logger;
 import ghostlab.MainServer;
 import ghostlab.messages.clientmessages.MenuMessage;
 import ghostlab.messages.servermessages.*;
@@ -22,7 +21,6 @@ public class UNREG implements MenuMessage {
         DUNNO dunno = new DUNNO();
         if (ch.currentLobby[0] == 0 && ch.currPlayerID[0] == "") {
             dunno.send(os);
-            Logger.log("aaa");
         }
         else {
             if (ch.ms.getGameServers()[ch.currentLobby[0]].unregister(ch.currPlayerID[0])) {

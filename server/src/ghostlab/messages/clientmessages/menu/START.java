@@ -32,30 +32,10 @@ public class START implements MenuMessage {
       gs.addPlayerReady(this);
       gs.startTheGameIfAllReady();
       ch.shouldStop = true;
-      // wait the game out
-      // while (!ms.getGameServers()[currentLobby[0]].isOver())
-      //   ;
-      
-      // System.out.println(this);
-
-      // synchronized(gs) {
-      //   gs.wait();
-      // }
-      
-      
-      // Logger.log(ch.ch.currPlayerID[0] + " FUCKO\n");
-
-      // HashMap<Socket, Boolean> hs = ms.getGameServers()[currentLobby[0]].getEndedPeacefully();
-      // // Close client connection
-      // Logger.log("BBBBB " + hs + "\n");
-      // Boolean ret = hs.get(client);
-      // if (ret != null && !ret) {
-      //   return;
-      // }
     }
   }
 
-  // public String toString() {
-    // return ("START***");
-  // }
+  public String toString() {
+    return ("START***");
+  }
 }

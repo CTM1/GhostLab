@@ -56,12 +56,8 @@ public class REGIS implements MenuMessage {
 
     public void executeRequest(BufferedReader br, OutputStream os, MainServer.ClientHandler ch) throws Exception {
                 REGNO regno = new REGNO();
-
-                
                 byte regGameID = this.getGameID();
-                System.out.println(regGameID);
                 int regID = Byte.toUnsignedInt(regGameID);
-                System.out.println(regID);
 
                 if (ch.ms.getGameServers()[regID] == null) {
                     // throw new InvalidRequestException("Game " + regID + " does not exist.");

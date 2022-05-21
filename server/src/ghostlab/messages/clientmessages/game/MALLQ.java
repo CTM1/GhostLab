@@ -33,9 +33,13 @@ public class MALLQ implements GameMessage {
     return new MALLQ(new String(buff, 0, read));
   }
 
+  public String toString() {
+    return String.format("MALL? %s***", message);
+  }
+
   public void executeRequest(GameServer.PlayerHandler ph, GameServer gs, Player p, OutputStream os)
       throws IOException {
-    Logger.log("Sending " + message + " from " + p.getPlayerID() + "\n");
+    Logger.log("[*] Sending " + message + " from " + p.getPlayerID() + "\n");
     gs.getMulticast().MESSA(p.getPlayerID(), message);
 
     Logger.verbose("> %s : MALL!***\n", p);
