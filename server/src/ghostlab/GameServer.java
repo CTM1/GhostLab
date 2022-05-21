@@ -40,7 +40,6 @@ public class GameServer {
     this.endedPeacefully = new HashMap<Socket, Boolean>();
 
     this.endedPeacefully.put(hostTCPSocket, true);
-    Logger.log(endedPeacefully + "\n");
 
     String newIP = String.format("224.255.0.%d", id);
     int udpPort = -1;

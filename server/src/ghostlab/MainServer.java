@@ -123,7 +123,7 @@ public class MainServer {
           for (int i = 0; i < 5; i++) {
             request += (char) (br.read());
           }
-          Logger.verbose("< (MS) %s : %s\n", client, request);
+          Logger.verbose("< (MS) (%s:%s) : %s\n", client.getInetAddress(), client.getPort(), request);
           request = request.replace("?", "Q");
 
           if (Arrays.asList(gameMessages).contains(request)) {
